@@ -10,12 +10,15 @@ import json
 import re
 import ssl
 import sys
+import time
+import urllib.parse
 import urllib.request
 
 ctx = ssl.create_default_context()
 ctx.check_hostname = False
 ctx.verify_mode = ssl.CERT_NONE
 UA = {"User-Agent": "okhttp/3.12.0"}
+UA_HDR = UA
 
 
 def get(url, timeout=25, n=400000):
@@ -114,23 +117,115 @@ def grp(n):
     return "其他"
 
 
-# 保险：若本次验证数比现有文件少 20% 以上，判定为网络抖动，保留旧文件不覆盖
+# ---------- 2b. 带宽测速 ----------
+print("== 2b. 测速 ==")
+
+
+def segs_of(txt, base):
+    out = []
+    for line in txt.splitlines():
+        line = line.strip()
+        if not line or line.startswith("#"):
+            continue
+        out.append(urllib.parse.urljoin(base, line))
+    for m in re.findall(r'URI="([^"]+)"', txt):
+        out.append(urllib.parse.urljoin(base, m))
+    return out
+
+
+def measure(u):
+    """返回 kbps（取首个分片前 256KB 计时）；失败返回 0"""
+    try:
+        txt = get(u, timeout=8, n=12000).decode("utf-8", "ignore")
+    except Exception:
+        return 0
+    if not txt.startswith("#EXTM3U"):
+        return 0
+    base = u
+    if "#EXT-X-STREAM-INF" in txt:
+        subs = segs_of(txt, u)
+        if not subs:
+            return 0
+        try:
+            base = subs[0]
+            txt = get(base, timeout=8, n=12000).decode("utf-8", "ignore")
+        except Exception:
+            return 0
+    segs = [s for s in segs_of(txt, base) if not s.lower().endswith(".m3u8")]
+    if not segs:
+        return 0
+    t1, got = time.time(), 0
+    try:
+        with urllib.request.urlopen(urllib.request.Request(segs[0], headers=UA_HDR),
+                                    timeout=10, context=ctx) as r:
+            while got < 262144:
+                chunk = r.read(65536)
+                if not chunk:
+                    break
+                got += len(chunk)
+    except Exception:
+        return 0
+    dt = time.time() - t1
+    if dt <= 0 or got < 8192:
+        return 0
+    return round(got * 8 / dt / 1000)
+
+
+speed = {}
+ts = time.time()
+with cf.ThreadPoolExecutor(20) as ex:
+    for (c, u), k in zip(verified, ex.map(lambda p: measure(p[1]), verified)):
+        speed[u] = k
+known = [v for v in speed.values() if v > 0]
+print(f"测速完成 {len(known)}/{len(verified)} 条，用时 {time.time()-ts:.0f}s")
+if known:
+    known.sort()
+    print(f"带宽中位数 {known[len(known)//2]} kbps | 最低 {known[0]} | 最高 {known[-1]}")
+
+# 按频道归组，每个频道保留最快 2 条线路；同频道内慢于 150kbps 的线不保留
+by_ch = {}
+for c, u in verified:
+    by_ch.setdefault(c.replace(" ", ""), []).append((c, u, speed.get(u, 0)))
+
+usable_ok = len(known) >= len(verified) * 0.4   # 测速成功率过低则不参与筛选
+final = []
+for key, items in by_ch.items():
+    if usable_ok:
+        items.sort(key=lambda x: -x[2])
+        best = items[0][2]
+        keep = [it for it in items[:2] if it[2] >= max(150, best * 0.3)]
+        final.extend(keep or [items[0]])
+    else:
+        final.extend(items[:1])
+print(f"频道数 {len(by_ch)} → 输出线路 {len(final)} 条（每频道最多2条）")
+
+# 保险：若本次结果比现有文件少 20% 以上，判定为网络抖动，保留旧文件不覆盖
 prev = 0
 try:
     prev = open("live_verified.m3u", encoding="utf-8").read().count("#EXTINF")
 except FileNotFoundError:
     pass
-if prev and len(verified) < prev * 0.8:
-    print(f"警告：本次仅验证通过 {len(verified)} 个，远少于现有 {prev} 个，"
+if prev and len(final) < prev * 0.8:
+    print(f"警告：本次仅 {len(final)} 条，远少于现有 {prev} 条，"
           f"判定为网络抖动，保留旧 live_verified.m3u 不覆盖")
 else:
     order = {"央视": 0, "卫视": 1, "其他": 2}
+    final.sort(key=lambda x: (order[grp(x[0])], x[0], -x[2]))
     lines = ["#EXTM3U"]
-    for c, u in sorted(verified, key=lambda x: (order[grp(x[0])], x[0])):
-        lines.append(f'#EXTINF:-1 tvg-name="{c}" group-title="{grp(c)}",{c}')
+    seen_name = {}
+    for c, u, k in final:
+        n = seen_name.get(c, 0)
+        seen_name[c] = n + 1
+        label = c if n == 0 else f"{c}▪{n+1}"
+        if 0 < k < 500:          # 带宽过低，标出来避免误点
+            label += "（慢）"
+        lines.append(f'#EXTINF:-1 tvg-name="{c}" group-title="{grp(c)}",{label}')
         lines.append(u)
     open("live_verified.m3u", "w", encoding="utf-8").write("\n".join(lines) + "\n")
-    print(f"live_verified.m3u 已生成（{len(verified)} 频道，上次 {prev}）")
+    json.dump([[c, u, k] for c, u, k in final],
+              open("live_speed.json", "w", encoding="utf-8"),
+              ensure_ascii=False, separators=(",", ":"))
+    print(f"live_verified.m3u 已生成（{len(final)} 条线路 / {len(by_ch)} 个频道，上次 {prev}）")
 
 # ---------- 3. EPG 节目单源探测 ----------
 print("== 3. EPG 探测 ==")
