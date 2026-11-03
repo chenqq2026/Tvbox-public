@@ -85,12 +85,16 @@ for c, u in channels:
 print(f"拉到 {len(uniq)} 个频道，开始逐个验证...")
 
 
-def playable(u):
-    try:
-        b = get(u, timeout=7, n=600)
-        return b[:7] == b"#EXTM3U" or b[:4] == b"\x47\x40\x00\x10"
-    except Exception:
-        return False
+def playable(u, attempt=2):
+    """失败重试一次，降低网络抖动造成的误判"""
+    for i in range(attempt):
+        try:
+            b = get(u, timeout=10 if i else 7, n=600)
+            if b[:7] == b"#EXTM3U" or b[:4] == b"\x47\x40\x00\x10":
+                return True
+        except Exception:
+            pass
+    return False
 
 
 verified = []
@@ -110,11 +114,89 @@ def grp(n):
     return "其他"
 
 
-order = {"央视": 0, "卫视": 1, "其他": 2}
-lines = ["#EXTM3U"]
-for c, u in sorted(verified, key=lambda x: (order[grp(x[0])], x[0])):
-    lines.append(f'#EXTINF:-1 tvg-name="{c}" group-title="{grp(c)}",{c}')
-    lines.append(u)
-open("live_verified.m3u", "w", encoding="utf-8").write("\n".join(lines) + "\n")
-print("live_verified.m3u 已生成")
+# 保险：若本次验证数比现有文件少 20% 以上，判定为网络抖动，保留旧文件不覆盖
+prev = 0
+try:
+    prev = open("live_verified.m3u", encoding="utf-8").read().count("#EXTINF")
+except FileNotFoundError:
+    pass
+if prev and len(verified) < prev * 0.8:
+    print(f"警告：本次仅验证通过 {len(verified)} 个，远少于现有 {prev} 个，"
+          f"判定为网络抖动，保留旧 live_verified.m3u 不覆盖")
+else:
+    order = {"央视": 0, "卫视": 1, "其他": 2}
+    lines = ["#EXTM3U"]
+    for c, u in sorted(verified, key=lambda x: (order[grp(x[0])], x[0])):
+        lines.append(f'#EXTINF:-1 tvg-name="{c}" group-title="{grp(c)}",{c}')
+        lines.append(u)
+    open("live_verified.m3u", "w", encoding="utf-8").write("\n".join(lines) + "\n")
+    print(f"live_verified.m3u 已生成（{len(verified)} 频道，上次 {prev}）")
+
+# ---------- 3. 合并成单仓配置 config_all.json ----------
+print("== 3. 合并单仓配置 ==")
+LIVE_URL = GAO_PROXY + "https://raw.githubusercontent.com/chenqq2026/Tvbox-public/main/live_verified.m3u"
+
+# 自持的 8 个直连 CMS（基线，不依赖任何第三方）
+try:
+    direct = json.load(open("direct_cms.json", encoding="utf-8"))
+    direct_sites = direct.get("sites", [])
+    direct_parses = direct.get("parses", [])
+except FileNotFoundError:
+    direct_sites, direct_parses = [], []
+
+merged_sites, used_keys, used_names = [], set(), set()
+
+# 自持直连站优先（最稳，放前面）
+for s in direct_sites:
+    s = dict(s)
+    s["key"] = "cms_" + str(s.get("key") or s.get("name"))[:24]
+    if s["key"] in used_keys:
+        continue
+    used_keys.add(s["key"])
+    used_names.add(s.get("name"))
+    merged_sites.append(s)
+
+# qist 站点追加，key/name 冲突时加后缀
+for s in jsm.get("sites", []):
+    s = dict(s)
+    k = str(s.get("key") or s.get("name") or "")
+    if not k:
+        continue
+    if k in used_keys:
+        k = k + "_q"
+    s["key"] = k
+    used_keys.add(k)
+    merged_sites.append(s)
+
+# 解析器合并（按 name 去重，自持优先）
+merged_parses, seen_p = [], set()
+for p in direct_parses + jsm.get("parses", []):
+    n = str(p.get("name") or "")
+    if n and n not in seen_p:
+        seen_p.add(n)
+        merged_parses.append(p)
+
+# 直播：验证过的 405 频道放第一位，qist 原有直播做备用
+merged_lives = [{"name": "自建·已验证频道", "type": 0, "url": LIVE_URL, "playerType": 2}]
+for l in jsm.get("lives", []):
+    if str(l.get("url") or "").startswith("http"):
+        merged_lives.append(l)
+
+cfg_all = {
+    "spider": jsm["spider"],
+    "wallpaper": jsm.get("wallpaper", ""),
+    "sites": merged_sites,
+    "lives": merged_lives,
+    "parses": merged_parses,
+    "flags": jsm.get("flags", []),
+    "doh": jsm.get("doh", []),
+    "rules": jsm.get("rules", []),
+    "ads": jsm.get("ads", []),
+    "danmaku": jsm.get("danmaku", {}),
+}
+json.dump(cfg_all, open("config_all.json", "w", encoding="utf-8"),
+          ensure_ascii=False, separators=(",", ":"))
+print(f"config_all.json: sites={len(merged_sites)} "
+      f"(自持{len(direct_sites)}+qist{len(jsm.get('sites', []))}) "
+      f"parses={len(merged_parses)} lives={len(merged_lives)}")
 print("DONE")
