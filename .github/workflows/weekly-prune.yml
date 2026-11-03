@@ -1,0 +1,38 @@
+name: weekly-prune
+
+on:
+  schedule:
+    - cron: "47 21 * * 0"   # 每周日 UTC 21:47 = 北京时间周一 05:47
+  workflow_dispatch: {}
+
+permissions:
+  contents: write
+
+concurrency:
+  group: weekly-prune
+  cancel-in-progress: false
+
+jobs:
+  prune:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: 按DNS判定剔除已死站点
+        run: python scripts/prune_sites.py
+
+      - name: 提交（有变化才提交）
+        run: |
+          git config user.name "chenqq2026"
+          git config user.email "chenqq2026@users.noreply.github.com"
+          if git diff --quiet -- pruned_config.json; then
+            echo "无变化，跳过提交"
+          else
+            git add pruned_config.json dropped_sites.txt
+            git commit -m "auto prune: 剔除死站点 $(date -u +%Y%m%d)"
+            git push
+          fi

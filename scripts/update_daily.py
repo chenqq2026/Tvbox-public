@@ -132,8 +132,31 @@ else:
     open("live_verified.m3u", "w", encoding="utf-8").write("\n".join(lines) + "\n")
     print(f"live_verified.m3u 已生成（{len(verified)} 频道，上次 {prev}）")
 
-# ---------- 3. 合并成单仓配置 config_all.json ----------
-print("== 3. 合并单仓配置 ==")
+# ---------- 3. EPG 节目单源探测 ----------
+print("== 3. EPG 探测 ==")
+EPG_CANDS = [
+    "https://epg.cdn.loc.cc/?ch={name}&date={date}",
+    "https://epg.112114.xyz/?ch={name}&date={date}",
+    "https://diyp.112114.xyz/?ch={name}&date={date}",
+]
+epg_url = ""
+for cand in EPG_CANDS:
+    try:
+        probe = cand.replace("{name}", "CCTV1").replace("{date}", "20261103")
+        d = json.loads(get(probe, timeout=15, n=60000).decode("utf-8"))
+        if d.get("epg_data"):
+            epg_url = cand
+            print(f"EPG 可用: {cand}（CCTV1 {len(d['epg_data'])} 条节目）")
+            break
+    except Exception as e:
+        print(f"EPG 不可用: {cand.split('/')[2]} ({type(e).__name__})")
+if not epg_url:
+    print("警告：所有 EPG 源都不可用，配置中将不带节目单")
+
+LOGO = "https://logo.wyfc.qzz.io/{name}.png"
+
+# ---------- 4. 合并成单仓配置 config_all.json ----------
+print("== 4. 合并单仓配置 ==")
 LIVE_URL = GAO_PROXY + "https://raw.githubusercontent.com/chenqq2026/Tvbox-public/main/live_verified.m3u"
 
 # 自持的 8 个直连 CMS（基线，不依赖任何第三方）
@@ -177,10 +200,16 @@ for p in direct_parses + jsm.get("parses", []):
         merged_parses.append(p)
 
 # 直播：验证过的 405 频道放第一位，qist 原有直播做备用
-merged_lives = [{"name": "自建·已验证频道", "type": 0, "url": LIVE_URL, "playerType": 2}]
+merged_lives = [{"name": "自建·已验证频道", "type": 0, "url": LIVE_URL,
+                 "playerType": 2, "logo": LOGO}]
 for l in jsm.get("lives", []):
     if str(l.get("url") or "").startswith("http"):
         merged_lives.append(l)
+
+if epg_url:
+    for l in merged_lives:
+        l.setdefault("epg", epg_url)
+        l.setdefault("logo", LOGO)
 
 cfg_all = {
     "spider": jsm["spider"],
