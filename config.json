@@ -1,16 +1,16 @@
 {
   "urls": [
     {
-      "name": "①自持·8直连CMS+405直播(零依赖,最稳)",
+      "name": "①主用·165站+534直播+EPG(单仓,每日更新)",
+      "url": "https://gh-proxy.com/https://raw.githubusercontent.com/chenqq2026/Tvbox-public/main/config_all.json"
+    },
+    {
+      "name": "②备用·252站(老gao剔死域名后)",
+      "url": "https://gh-proxy.com/https://raw.githubusercontent.com/chenqq2026/Tvbox-public/main/pruned_config.json"
+    },
+    {
+      "name": "③应急·8直连CMS+直播(最简,7KB)",
       "url": "https://gh-proxy.com/https://raw.githubusercontent.com/chenqq2026/Tvbox-public/main/direct_cms.json"
-    },
-    {
-      "name": "②qist日更仓·今日快照(157站,jar已绝对化)",
-      "url": "https://gh-proxy.com/https://raw.githubusercontent.com/chenqq2026/Tvbox-public/main/jsm_fixed.json"
-    },
-    {
-      "name": "③老gao仓(298spider,停更上游兜底)",
-      "url": "https://gh-proxy.com/https://raw.githubusercontent.com/chenqq2026/Tvbox-public/main/verified_config.json"
     }
   ]
 }

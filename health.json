@@ -1,0 +1,28 @@
+{
+  "updated": "2026-11-03 16:32:40",
+  "jar": {
+    "md5": "c6c7cbd14359dee31a97abb7ec27df19",
+    "size_mb": 1.84,
+    "declared_match": true,
+    "changed": false
+  },
+  "sites": {
+    "total": 165,
+    "cms": 22,
+    "spider": 142,
+    "cms_dead_today": []
+  },
+  "parses": {
+    "total": 27,
+    "alive": 9,
+    "tested": 25
+  },
+  "live": {
+    "lines": 534,
+    "channels": 432,
+    "median_kbps": 6867,
+    "p10_kbps": 1434,
+    "slow_tagged": 15
+  },
+  "epg": "https://epg.cdn.loc.cc/?ch={name}&date={date}"
+}

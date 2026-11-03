@@ -7,6 +7,7 @@
 import concurrent.futures as cf
 import hashlib
 import json
+import os
 import re
 import ssl
 import sys
@@ -41,16 +42,77 @@ def fetch_first(urls, timeout=25, n=400000):
 # ---------- 1. qist jsm.json ----------
 GAO_PROXY = "https://gh-proxy.com/"
 RAW_QIST = "https://raw.githubusercontent.com/qist/tvbox/master/"
+GH_RAW_SELF = "https://raw.githubusercontent.com/chenqq2026/Tvbox-public/main/"
 JAR_MD5_RE = re.compile(r"md5;([0-9a-f]{32})")
+JAR_MIN = 500 * 1024          # 合法 spider.jar 至少 500KB，小于则判为错误页
+JAR_MAX = 30 * 1024 * 1024
 
 print("== 1. qist jsm.json ==")
-raw = fetch_first([RAW_QIST + "jsm.json", GAO_PROXY + RAW_QIST + "jsm.json"])
+raw = fetch_first([GAO_PROXY + RAW_QIST + "jsm.json",
+                   "https://qist.wyfc.qzz.io/jsm.json",
+                   RAW_QIST + "jsm.json"])
 jsm = json.loads(raw.decode("utf-8"))
 
-jar_urls = [RAW_QIST + "jar/spider.jar", GAO_PROXY + RAW_QIST + "jar/spider.jar"]
-jar = fetch_first(jar_urls, timeout=40)
+# 1b. spider.jar：多镜像 + 内容校验 + 镜像进本仓库
+#     旧版脚本只算 md5 不校验内容，抓到 GitHub 错误页也会把错 md5 写进配置，
+#     导致 TVBox 校验通过但 jar 解析失败 -> 所有 spider 站打不开。
+declared_md5 = ""
+_m = JAR_MD5_RE.search(str(jsm.get("spider") or ""))
+if _m:
+    declared_md5 = _m.group(1)
+jar, jar_src = None, ""
+for u in [GAO_PROXY + RAW_QIST + "jar/spider.jar",
+          "https://qist.wyfc.qzz.io/jar/spider.jar",
+          RAW_QIST + "jar/spider.jar"]:
+    try:
+        b = get(u, timeout=60, n=JAR_MAX)
+    except Exception as e:
+        print(f"  jar 拉取失败 {u[:58]} ({type(e).__name__})")
+        continue
+    if not (JAR_MIN <= len(b) <= JAR_MAX):
+        print(f"  jar 体积异常 {len(b)}B，判为错误页，跳过 {u[:58]}")
+        continue
+    if not b.startswith(b"PK\x03\x04"):
+        print(f"  jar 非 ZIP 头 {b[:6]!r}，跳过 {u[:58]}")
+        continue
+    # 若 qist 在 jsm.json 里声明了 md5，则必须与声明一致才算拿到正确版本，
+    # 否则说明命中了代理 CDN 缓存，换下一个镜像
+    calc = hashlib.md5(b).hexdigest()
+    if declared_md5 and calc != declared_md5:
+        print(f"  jar md5 与 qist 声明不符（命中缓存），换镜像 "
+              f"{calc[:8]}!={declared_md5[:8]}")
+        continue
+    jar, jar_src = b, u
+    break
+
+if jar is None:
+    if declared_md5:
+        # 所有镜像都对不上声明值时，退回按 qist 声明的 md5 + 本次拉到的合法 jar
+        for u in [GAO_PROXY + RAW_QIST + "jar/spider.jar",
+                  "https://qist.wyfc.qzz.io/jar/spider.jar"]:
+            try:
+                b = get(u, timeout=60, n=JAR_MAX)
+                if JAR_MIN <= len(b) <= JAR_MAX and b.startswith(b"PK\x03\x04"):
+                    jar, jar_src = b, u
+                    print(f"  退回使用 {u[:58]}（md5 与声明不符，但内容为合法 jar）")
+                    break
+            except Exception:
+                continue
+    if jar is None:
+        raise SystemExit("所有镜像都拿不到合法 spider.jar，中止本次更新（保留线上旧版本）")
+
 md5 = hashlib.md5(jar).hexdigest()
-jsm["spider"] = GAO_PROXY + RAW_QIST + "jar/spider.jar;md5;" + md5
+os.makedirs("jar", exist_ok=True)
+old_jar = b""
+if os.path.exists("jar/spider.jar"):
+    old_jar = open("jar/spider.jar", "rb").read()
+jar_changed = (hashlib.md5(old_jar).hexdigest() != md5) if old_jar else True
+if jar_changed:
+    open("jar/spider.jar", "wb").write(jar)
+print(f"  jar {len(jar) / 1048576:.2f}MB md5={md5} 来源={jar_src[:46]} "
+      f"声明一致={declared_md5 == md5} 更新={jar_changed}")
+# spider 指向本仓库镜像（不再依赖 qist 上游，qist 删库也不影响）
+jsm["spider"] = GAO_PROXY + GH_RAW_SELF + "jar/spider.jar;md5;" + md5
 # 修复站内相对路径
 for s in jsm.get("sites", []):
     for f in ("api", "ext"):
@@ -63,22 +125,52 @@ print(f"jsm_fixed.json: sites={len(jsm.get('sites', []))} jar_md5={md5[:12]}")
 
 # ---------- 2. 直播逐频道验证 ----------
 print("== 2. 直播源验证 ==")
+# 主源 vbskycn：频道量大、地方台全，但（2026-11 实测）已不含 CCTV-1/2/3/4/6/7/9/10/11/14
 IPTV_URLS = [
     "https://raw.githubusercontent.com/vbskycn/iptv/master/tv/iptv4.m3u",
     GAO_PROXY + "https://raw.githubusercontent.com/vbskycn/iptv/master/tv/iptv4.m3u",
     "https://ghproxy.net/https://raw.githubusercontent.com/vbskycn/iptv/master/tv/iptv4.m3u",
 ]
-txt = fetch_first(IPTV_URLS, timeout=40).decode("utf-8", "ignore")
+# 补源 Guovin/iptv-api 自动生成结果（每 6 小时更新）：央视 1-17 每台多线路，正好补缺口
+FILL_URLS = [
+    GAO_PROXY + "https://raw.githubusercontent.com/Guovin/iptv-api/gd/output/result.m3u",
+    "https://raw.githubusercontent.com/Guovin/iptv-api/gd/output/result.m3u",
+    "https://ghproxy.net/https://raw.githubusercontent.com/Guovin/iptv-api/gd/output/result.m3u",
+]
 
-channels, name = [], None
-for line in txt.splitlines():
-    line = line.strip()
-    if line.startswith("#EXTINF"):
-        m = re.search(r",(.+)$", line)
-        name = m.group(1).strip() if m else None
-    elif line and not line.startswith("#") and name:
-        channels.append((name, line))
-        name = None
+
+def norm_chn(n):
+    """CCTV-1 / CCTV 1 / cctv1 统一成 CCTV1：便于分组、去重和 EPG 匹配"""
+    n = re.sub(r"\s+", "", str(n).strip())
+    return re.sub(r"^cctv[-\s]?", "CCTV", n, flags=re.I)
+
+
+def parse_m3u(txt):
+    out, nm = [], None
+    for line in txt.splitlines():
+        line = line.strip()
+        if line.startswith("#EXTINF"):
+            m = re.search(r",(.+)$", line)
+            nm = m.group(1).strip() if m else None
+        elif line and not line.startswith("#") and nm:
+            out.append((norm_chn(nm), line))
+            nm = None
+    return out
+
+
+channels = parse_m3u(fetch_first(IPTV_URLS, timeout=40).decode("utf-8", "ignore"))
+print(f"  主源 vbskycn: {len(channels)} 条")
+
+# 补源只取央视数字频道与卫视，避免把验证量翻四倍
+try:
+    fill = parse_m3u(fetch_first(FILL_URLS, timeout=45).decode("utf-8", "ignore"))
+    fill_keep = [(c, u) for c, u in fill
+                 if re.match(r"^CCTV\d+\+?$", c) or "卫视" in c]
+    print(f"  补源 iptv-api: {len(fill)} 条 → 央视/卫视 {len(fill_keep)} 条")
+    channels += fill_keep
+except Exception as e:
+    print(f"  补源拉取失败（不影响主流程）: {type(e).__name__}")
+
 # 去重（按 URL）
 seen, uniq = set(), []
 for c, u in channels:
@@ -92,7 +184,7 @@ def playable(u, attempt=2):
     """失败重试一次，降低网络抖动造成的误判"""
     for i in range(attempt):
         try:
-            b = get(u, timeout=10 if i else 7, n=600)
+            b = get(u, timeout=12 if i else 9, n=600)
             if b[:7] == b"#EXTM3U" or b[:4] == b"\x47\x40\x00\x10":
                 return True
         except Exception:
@@ -100,12 +192,18 @@ def playable(u, attempt=2):
     return False
 
 
-verified = []
-with cf.ThreadPoolExecutor(30) as ex:
+# 首轮并发 14（原 30 过高，会被运营商限速误判成“已死”），失败项再降并发补测一轮
+verified, failed = [], []
+with cf.ThreadPoolExecutor(14) as ex:
     for (c, u), ok in zip(uniq, ex.map(playable, [u for _, u in uniq])):
-        if ok:
-            verified.append((c, u))
-print(f"验证通过 {len(verified)}/{len(uniq)}")
+        (verified if ok else failed).append((c, u))
+print(f"首轮验证通过 {len(verified)}/{len(uniq)}")
+if failed:
+    with cf.ThreadPoolExecutor(6) as ex:
+        for (c, u), ok in zip(failed, ex.map(playable, [u for _, u in failed])):
+            if ok:
+                verified.append((c, u))
+    print(f"二次补测后 {len(verified)}/{len(uniq)}")
 
 
 def grp(n):
@@ -173,7 +271,7 @@ def measure(u):
 
 speed = {}
 ts = time.time()
-with cf.ThreadPoolExecutor(20) as ex:
+with cf.ThreadPoolExecutor(12) as ex:
     for (c, u), k in zip(verified, ex.map(lambda p: measure(p[1]), verified)):
         speed[u] = k
 known = [v for v in speed.values() if v > 0]
@@ -182,7 +280,8 @@ if known:
     known.sort()
     print(f"带宽中位数 {known[len(known)//2]} kbps | 最低 {known[0]} | 最高 {known[-1]}")
 
-# 按频道归组，每个频道保留最快 2 条线路；同频道内慢于 150kbps 的线不保留
+# 按频道归组，每个频道保留最快 2 条线路
+# k == 0 表示“测速失败”而非“带宽为0”，不能当成慢线路剔除，否则会误杀可用线路
 by_ch = {}
 for c, u in verified:
     by_ch.setdefault(c.replace(" ", ""), []).append((c, u, speed.get(u, 0)))
@@ -190,14 +289,33 @@ for c, u in verified:
 usable_ok = len(known) >= len(verified) * 0.4   # 测速成功率过低则不参与筛选
 final = []
 for key, items in by_ch.items():
+    # 央视与卫视留 3 条（最常看、也最容易单线挂掉），其余留 2 条
+    lim = 3 if (re.match(r"^CCTV\d+\+?$", key) or "卫视" in key) else 2
     if usable_ok:
         items.sort(key=lambda x: -x[2])
         best = items[0][2]
-        keep = [it for it in items[:2] if it[2] >= max(150, best * 0.3)]
+        keep = [it for it in items[:lim]
+                if it[2] == 0 or it[2] >= max(150, best * 0.3)]
         final.extend(keep or [items[0]])
     else:
         final.extend(items[:1])
-print(f"频道数 {len(by_ch)} → 输出线路 {len(final)} 条（每频道最多2条）")
+print(f"频道数 {len(by_ch)} → 输出线路 {len(final)} 条（央视/卫视最多3条，其余2条）")
+
+# 关键频道兜底：验证阶段受网络抖动影响，CCTV1/5/13 这类台一旦被漏判就"突然没了"。
+# 缺哪个就从上游未通过验证的线路里补一条（仍标记为不确定，排在有测速数据的后面）。
+MUST_HAVE = ["CCTV1", "CCTV2", "CCTV5", "CCTV5+", "CCTV6", "CCTV13",
+             "湖南卫视", "浙江卫视", "东方卫视", "江苏卫视", "北京卫视"]
+have = {c.replace(" ", "") for c, _u, _k in final}
+missing = [m for m in MUST_HAVE if m not in have]
+restored = []
+for m in missing:
+    for c, u in uniq:
+        if c.replace(" ", "") == m:
+            final.append((c, u, 0))
+            restored.append(m)
+            break
+if restored:
+    print(f"关键频道兜底补入: {restored}")
 
 # 保险：若本次结果比现有文件少 20% 以上，判定为网络抖动，保留旧文件不覆盖
 prev = 0
@@ -219,7 +337,9 @@ else:
         label = c if n == 0 else f"{c}▪{n+1}"
         if 0 < k < 500:          # 带宽过低，标出来避免误点
             label += "（慢）"
-        lines.append(f'#EXTINF:-1 tvg-name="{c}" group-title="{grp(c)}",{label}')
+        # tvg-name 去掉空格：EPG 服务按频道名查询，「CCTV 1」查不到、「CCTV1」能查到
+        lines.append(f'#EXTINF:-1 tvg-name="{c.replace(chr(32), "")}" '
+                     f'group-title="{grp(c)}",{label}')
         lines.append(u)
     open("live_verified.m3u", "w", encoding="utf-8").write("\n".join(lines) + "\n")
     json.dump([[c, u, k] for c, u, k in final],
@@ -250,6 +370,53 @@ if not epg_url:
 
 LOGO = "https://logo.wyfc.qzz.io/{name}.png"
 
+# ---------- 3b. 解析器实测排序（只排序，不删除） ----------
+# 解析器多而重复是"点开没反应"的常见原因：壳会按顺序尝试，排在前面的是早就挂掉的
+# 公共 jx 接口时，一次点击要等好几轮超时。这里每天实测一次，把活的排前面。
+print("== 3b. 解析器实测 ==")
+PARSER_TEST = "https://vip.ffzy-play.com/share/20240101/1234/index.m3u8"
+
+
+def parse_ok(item):
+    name, url = item
+    if not url.startswith("http"):
+        return name, None
+    tpl = url if ("url=" in url or "v=" in url) else url + ("&url=" if "?" in url else "?url=")
+    try:
+        b = get(tpl + urllib.parse.quote(PARSER_TEST, safe=""), timeout=9, n=80000)
+        low = b.decode("utf-8", "ignore").lower()
+        if any(x in low for x in ("域名过期", "已过期", "已停止", "not found", "已暂停")):
+            return name, False
+        return name, any(x in low for x in (".m3u8", "video", "player", "iframe", "var url"))
+    except Exception:
+        return name, False
+
+
+def build_parses(parses_in):
+    """按 url 去重，保序；再用实测结果把可用的稳定排在前面。"""
+    uniq, seen_u = [], set()
+    for p in parses_in:
+        u = str(p.get("url") or "")
+        key = u or ("__agg__" + str(p.get("name")))
+        if key in seen_u:
+            continue
+        seen_u.add(key)
+        uniq.append(p)
+    cand = [(p.get("name"), str(p.get("url") or "")) for p in uniq
+            if str(p.get("url") or "").startswith("http")]
+    res = {}
+    if cand:
+        with cf.ThreadPoolExecutor(12) as ex:
+            for name, ok in ex.map(parse_ok, cand):
+                res[name] = ok
+    ok_n = sum(1 for v in res.values() if v)
+    print(f"  解析器 {len(parses_in)} -> 去重后 {len(uniq)} | 实测可用 {ok_n}/{len(res)}")
+    alive = [p for p in uniq if res.get(p.get("name")) is True]
+    unknown = [p for p in uniq if res.get(p.get("name")) is None]
+    dead = [p for p in uniq if res.get(p.get("name")) is False]
+    return alive + unknown + dead, {"total": len(uniq), "alive": ok_n,
+                                    "tested": len(res)}
+
 # ---------- 4. 合并成单仓配置 config_all.json ----------
 print("== 4. 合并单仓配置 ==")
 LIVE_URL = GAO_PROXY + "https://raw.githubusercontent.com/chenqq2026/Tvbox-public/main/live_verified.m3u"
@@ -261,6 +428,36 @@ try:
     direct_parses = direct.get("parses", [])
 except FileNotFoundError:
     direct_sites, direct_parses = [], []
+
+# 4a. 直连 CMS 每日探活：这 8 个站是「最稳的保底」，但也是手工挑的，
+#     死了还留在配置里就会「点开就崩」。返回不了片单的当天剔除。
+#     注意：不能用 json.loads 判断整包——CMS 返回的列表动辄几 MB，
+#     read(n) 截断后必然解析失败，会把活站全判死（这坑踩过一次）。
+def cms_alive(s):
+    api = str(s.get("api") or "")
+    if not api.startswith("http"):
+        return True  # 非直连站不在这里判定
+    base = api.split("?")[0].rstrip("/")
+    u = base + ("&ac=videolist&pg=1" if "?" in base else "?ac=videolist&pg=1")
+    for _ in range(2):
+        try:
+            head = get(u, timeout=12, n=6000).decode("utf-8", "ignore")
+            if any(k in head for k in ('"code"', '"list"', '"class"', "<rss", "<list", "<?xml")):
+                return True
+        except Exception:
+            time.sleep(0.5)
+    return False
+
+
+cms_dead = []
+if direct_sites:
+    with cf.ThreadPoolExecutor(8) as ex:
+        cms_ok = list(ex.map(cms_alive, direct_sites))
+    cms_dead = [str(s.get("name")) for s, ok in zip(direct_sites, cms_ok) if not ok]
+    if cms_dead:
+        print(f"  直连CMS探活失败(今日剔除): {cms_dead}")
+    direct_sites = [s for s, ok in zip(direct_sites, cms_ok) if ok]
+    print(f"  直连CMS探活: {len(direct_sites)} 可用 / {len(cms_dead)} 剔除")
 
 merged_sites, used_keys, used_names = [], set(), set()
 
@@ -286,20 +483,36 @@ for s in jsm.get("sites", []):
     used_keys.add(k)
     merged_sites.append(s)
 
-# 解析器合并（按 name 去重，自持优先）
-merged_parses, seen_p = [], set()
-for p in direct_parses + jsm.get("parses", []):
-    n = str(p.get("name") or "")
-    if n and n not in seen_p:
-        seen_p.add(n)
-        merged_parses.append(p)
+# 解析器合并：去重 + 实测可用的排前（自持优先）
+merged_parses, parse_stat = build_parses(direct_parses + jsm.get("parses", []))
 
-# 直播：验证过的 405 频道放第一位，qist 原有直播做备用
+# 直播：验证过的频道放第一位，qist 原有直播做备用（拉不到频道的直接剔）
 merged_lives = [{"name": "自建·已验证频道", "type": 0, "url": LIVE_URL,
                  "playerType": 2, "logo": LOGO}]
-for l in jsm.get("lives", []):
-    if str(l.get("url") or "").startswith("http"):
-        merged_lives.append(l)
+
+
+def live_has_channels(u):
+    try:
+        t = get(u, timeout=15, n=400000).decode("utf-8", "ignore")
+    except Exception:
+        return False
+    return len(re.findall(r"^#EXTINF|^[^#\n]+,", t, re.M)) >= 5
+
+
+qist_lives = [l for l in jsm.get("lives", [])
+              if str(l.get("url") or "").startswith("http")]
+if qist_lives:
+    with cf.ThreadPoolExecutor(6) as ex:
+        keep = list(ex.map(lambda l: live_has_channels(str(l["url"])), qist_lives))
+    dropped = [l.get("name") for l, k in zip(qist_lives, keep) if not k]
+    if dropped:
+        print(f"  剔除无频道直播源: {dropped}")
+    qist_lives = [l for l, k in zip(qist_lives, keep) if k]
+for l in qist_lives:
+    l = dict(l)
+    if not str(l.get("name") or "").startswith("备用"):
+        l["name"] = "备用·" + str(l.get("name") or "qist")
+    merged_lives.append(l)
 
 if epg_url:
     for l in merged_lives:
@@ -323,4 +536,31 @@ json.dump(cfg_all, open("config_all.json", "w", encoding="utf-8"),
 print(f"config_all.json: sites={len(merged_sites)} "
       f"(自持{len(direct_sites)}+qist{len(jsm.get('sites', []))}) "
       f"parses={len(merged_parses)} lives={len(merged_lives)}")
+
+# ---------- 5. health.json 健康快照 ----------
+print("== 5. 健康快照 ==")
+_kb = sorted([k for _c, _u, k in final if k > 0])
+health = {
+    "updated": time.strftime("%Y-%m-%d %H:%M:%S"),
+    "jar": {"md5": md5, "size_mb": round(len(jar) / 1048576, 2),
+            "declared_match": declared_md5 == md5, "changed": jar_changed},
+    "sites": {
+        "total": len(merged_sites),
+        "cms": sum(1 for s in merged_sites if str(s.get("type")) == "1"),
+        "spider": sum(1 for s in merged_sites if str(s.get("type")) == "3"),
+        "cms_dead_today": cms_dead,
+    },
+    "parses": parse_stat,
+    "live": {
+        "lines": len(final),
+        "channels": len(by_ch),
+        "median_kbps": _kb[len(_kb) // 2] if _kb else 0,
+        "p10_kbps": _kb[len(_kb) // 10] if _kb else 0,
+        "slow_tagged": sum(1 for _c, _u, k in final if 0 < k < 500),
+    },
+    "epg": epg_url or "无可用源",
+}
+json.dump(health, open("health.json", "w", encoding="utf-8"),
+          ensure_ascii=False, indent=2)
+print(json.dumps(health, ensure_ascii=False, indent=2))
 print("DONE")

@@ -1,0 +1,115 @@
+# Tvbox-public
+
+TVBox / FongMi 影视 / OK影视 的配置源。**每天北京时间 05:17 由 GitHub Actions 自动重建**，不需要手动维护。
+
+---
+
+## 一、导入地址
+
+### 主地址（单仓，推荐）
+
+```
+https://gh-proxy.com/https://raw.githubusercontent.com/chenqq2026/Tvbox-public/main/config_all.json
+```
+
+### 备用（gh-proxy 抽风时换这个，内容完全相同）
+
+```
+https://ghproxy.net/https://raw.githubusercontent.com/chenqq2026/Tvbox-public/main/config_all.json
+```
+
+> 为什么不推荐 jsDelivr：它 CDN 缓存 12 小时、客户端本地缓存 7 天。配置每天更新，
+> 用 jsDelivr 会导致「明明更新了，盒子上还是旧的」，很容易误判成自动更新失效。
+
+---
+
+## 二、里面有什么
+
+| 组成 | 内容 | 维护方式 |
+|---|---|---|
+| 站点 | 约 165 个：8 个实测直连 CMS（置顶）+ 157 个 spider 站 | 每天随 qist 上游更新；直连站每天探活 |
+| spider 引擎 | `jar/spider.jar`，**镜像在本仓库**，带 md5 校验 | 每天随 qist 更新，上游删库也不影响 |
+| 直播 | 约 534 条线路 / 432 个频道（CCTV1–17 每台 3 条、39 个卫视） | 双源合并，逐个验证 + 逐条测速 |
+| 节目单 | EPG：`epg.cdn.loc.cc`（JSON 格式） | 每天探测，源挂了自动换下一个 |
+| 台标 | `logo.wyfc.qzz.io` | 静态 |
+| 解析器 | 27 个（去重后），实测可用的排前面 | 每天实测排序 |
+
+**健康状态实时看 [`health.json`](health.json)**：jar 版本、站点数、解析器可用数、直播带宽中位数、EPG 状态，都是每次运行自动写入的。
+
+直播是**双源合并**：主源 `vbskycn/iptv`（地方台全，但已不含 CCTV-1/2/3/4/6/7/9/10/11/14），
+补源 `Guovin/iptv-api`（央视 1–17 每台多线路）。少任何一个都会缺台——这是实测出来的。
+
+---
+
+## 三、自动更新每天做什么
+
+`.github/workflows/daily-update.yml`，每天 UTC 21:17（北京 05:17，qist bot 更新之后）：
+
+1. **拉 qist 最新 `jsm.json`** → 修相对路径 → `jsm_fixed.json`
+2. **拉 `spider.jar`** → 校验（ZIP 头 + 体积 + 与 qist 声明的 md5 一致）→ 镜像到 `jar/spider.jar`
+3. **直播**：主源 vbskycn + 补源 iptv-api（只取央视/卫视）→ 逐频道请求验证（失败补测一轮）→ 逐条下载分片实测带宽 → 央视/卫视留 3 条、其余留 2 条 → 低于 500kbps 标「（慢）」
+4. **直连 CMS 探活**：8 个自持站当天返回不了片单的临时剔除
+5. **解析器**：实测排序，把挂掉的排到后面
+6. **EPG**：探测候选源，选可用的写入配置
+7. **写 `health.json`** + 有变化才提交
+
+`.github/workflows/weekly-prune.yml`，每周一 05:47：对备用配置做站点健康巡检，
+用 DNS 判定识别「域名已不存在」和「被 DNS 污染」的站点。**默认只报告不写文件**——
+老 gao 配置里大量 `csp_` 内置源无法提取主域名，自动写入会把它退回未剔除版本。
+
+**三道防抖保险**（防止一次网络抖动把成品写坏）：
+- 拿不到合法 jar（体积/ZIP 头/md5 校验不过）→ 直接中止，保留线上旧版本
+- 本次验证出的直播线路比现有文件少 20% 以上 → 判定为网络抖动，不覆盖
+- CCTV1/2/5/13、主要卫视若被漏判 → 从上游补一条进去，核心频道永不为空
+
+---
+
+## 四、文件说明
+
+| 文件 | 用途 |
+|---|---|
+| `config_all.json` | **日常使用**。单仓合并版：直连 CMS + spider 站 + 直播 + EPG |
+| `pruned_config.json` | 备用。老 gao 配置剔除死域名后的干净版（约 252 站） |
+| `direct_cms.json` | 应急最小配置。只有 8 个直连 CMS + 直播，7.9KB，不依赖任何 spider |
+| `config.json` | 多仓入口（3 条线路）。**部分壳不支持，导入会提示解析失败** |
+| `live_verified.m3u` | 验证 + 测速后的直播清单，可单独给任何 IPTV 播放器用 |
+| `live_speed.json` | 每条线路的实测带宽，排查卡顿时看这个 |
+| `health.json` | 最近一次运行的健康快照 |
+| `jsm_fixed.json` | qist 今日快照（spider 已绝对化） |
+| `jar/spider.jar` | spider 引擎镜像，配置里指向这里而不是 qist 上游 |
+| `dropped_sites.txt` | 每周剔站清单（站点 key / 名称 / 判定原因） |
+
+---
+
+## 五、常见问题
+
+**Q：提示「解析配置失败」**
+1. 先确认用的是 `config_all.json`（单仓）。`config.json` 是多仓格式，部分壳不认。
+2. 再重试 2 次——gh-proxy 偶发瞬断，TVBox 拉取那一刻断了就会报这个。
+3. 还不行换备用域名（把 `gh-proxy.com` 换成 `ghproxy.net`）。
+
+**Q：能进配置，但点开站点没反应 / 一直转圈**
+大概率是 spider 引擎没加载。到 `health.json` 看 `jar.declared_match` 是否为 `true`；
+再看播放器设置里的「spider 参数」是否为空。本仓库的 spider 指向自己仓库的 jar，不依赖 qist。
+如果只有部分站这样，那是站点本身挂了（spider 站的生命周期普遍只有几个月）。
+
+**Q：某个频道很卡**
+看 `live_verified.m3u` 里该频道名有没有「（慢）」标记，或者查 `live_speed.json` 里它的 kbps。
+同一频道通常有 2 条线路（`CCTV1`、`CCTV1▪2`），换另一条试。
+
+**Q：没有节目单（EPG）**
+先看 `health.json` 的 `epg` 字段是不是「无可用源」。公共 EPG 服务生命周期很短，
+四个候选（112114 / fanmingming / epg.pw / 51zmt）目前基本全挂，现用的是 `epg.cdn.loc.cc`。
+彻底解决只能自建（iptv-api 支持输出 EPG）。
+
+**Q：为什么站点列表比网上那些「几千个站」的配置少这么多**
+那些配置里大部分站早就死了，点开一个崩一个。这里的站点都做过域名存活判定，
+但**域名活着不等于站点能用**——spider 站依赖对方网站结构，改版即失效，这是生态本身的限制。
+
+---
+
+## 六、说明
+
+- 本仓库只存**配置和索引**，不存储、不分发任何视频内容。所有内容来自第三方公开站点。
+- 源可用性受地区、运营商、时间影响，无法保证长期稳定。
+- 仅用于个人学习与技术研究，请勿用于商业用途；内容版权归各原始站点所有。

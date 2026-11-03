@@ -2,11 +2,12 @@ name: daily-update
 
 on:
   schedule:
-    - cron: "17 21 * * *"   # UTC 21:17 = 北京时间 05:17（qist bot 更新之后）
+    - cron: "17 21 * * *" # UTC 21:17 = 北京时间 05:17（qist bot 更新之后）
   workflow_dispatch: {}
 
 permissions:
   contents: write
+  issues: write
 
 concurrency:
   group: daily-update
@@ -22,17 +23,56 @@ jobs:
         with:
           python-version: "3.11"
 
-      - name: 拉取qist最新配置并重新验证直播频道
+      - name: 更新（qist快照 + jar镜像 + 直播验证测速 + 解析器实测）
         run: python scripts/update_daily.py
+
+      - name: 写入运行摘要
+        if: always()
+        run: |
+          if [ -f health.json ]; then
+            {
+              echo "## 本次健康快照"
+              echo ""
+              echo "| 项 | 值 |"
+              echo "|---|---|"
+              python scripts/summary.py
+            } >> "$GITHUB_STEP_SUMMARY"
+          fi
 
       - name: 提交（有变化才提交）
         run: |
           git config user.name "chenqq2026"
           git config user.email "chenqq2026@users.noreply.github.com"
-          if git diff --quiet -- jsm_fixed.json live_verified.m3u config_all.json live_speed.json; then
+          if git diff --quiet -- jsm_fixed.json live_verified.m3u config_all.json live_speed.json health.json jar/spider.jar; then
             echo "内容无变化，跳过提交"
           else
-            git add jsm_fixed.json live_verified.m3u config_all.json live_speed.json
-            git commit -m "auto update: qist快照+直播验证 $(date -u +%Y%m%d%H%M)"
+            git add jsm_fixed.json live_verified.m3u config_all.json live_speed.json health.json jar/spider.jar
+            git commit -m "auto update: 源/直播/解析器 $(date -u +%Y%m%d%H%M)"
             git push
           fi
+
+      - name: 失败时开 issue 告警
+        if: failure()
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const runUrl = `${context.serverUrl}/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId}`;
+            const title = `[自动告警] 每日更新失败 ${new Date().toISOString().slice(0, 10)}`;
+            const body = `工作流运行失败：${runUrl}\n\n线上配置会保留上一次成功的版本（脚本内置防抖：拿不到合法 jar、或直播数量异常减少时会中止而不写空壳），**TVBox 不会因此变空**。\n\n查看日志定位后，可在 Actions 页面手动 Run workflow 重跑。`;
+            const open = await github.rest.issues.listForRepo({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              state: 'open',
+              per_page: 50,
+            });
+            const dup = open.data.some((i) => i.title.startsWith('[自动告警] 每日更新失败'));
+            if (!dup) {
+              await github.rest.issues.create({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                title,
+                body,
+              });
+            } else {
+              core.info('已有未关闭的告警 issue，跳过重复创建');
+            }

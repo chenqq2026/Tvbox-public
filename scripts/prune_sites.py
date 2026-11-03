@@ -18,6 +18,7 @@ import json
 import os
 import re
 import socket
+import sys
 import urllib.parse
 
 GAO_PROXY = "https://gh-proxy.com/"
@@ -187,8 +188,15 @@ LIVE_URL = GAO_PROXY + "https://raw.githubusercontent.com/chenqq2026/Tvbox-publi
 EPG = "https://epg.cdn.loc.cc/?ch={name}&date={date}"
 LOGO = "https://logo.wyfc.qzz.io/{name}.png"
 
+# spider 指向本仓库镜像的 jar（与 update_daily.py 保持一致），不再指向 gao/qist 上游
+GH_SELF = GAO_PROXY + "https://raw.githubusercontent.com/chenqq2026/Tvbox-public/main/"
+spider_line = cfg["spider"]
+if os.path.exists("jar/spider.jar"):
+    spider_line = GH_SELF + "jar/spider.jar;md5;" + hashlib.md5(
+        open("jar/spider.jar", "rb").read()).hexdigest()
+
 out = {
-    "spider": cfg["spider"],
+    "spider": spider_line,
     "wallpaper": cfg.get("wallpaper", ""),
     "sites": final,
     "lives": [{"name": "自建·已验证频道", "type": 0, "url": LIVE_URL,
@@ -206,9 +214,31 @@ dead_nx = sum(1 for _, _, st in dropped if st == "NXDOMAIN")
 dead_po = sum(1 for _, _, st in dropped if st == "POISONED")
 print(f"保留 {len(final)} 站 | 剔除 {len(dropped)} 站 "
       f"(域名不存在 {dead_nx} + DNS污染 {dead_po})")
-print(f"pruned_config.json {os.path.getsize('pruned_config.json')/1024:.1f}KB")
 
-with open("dropped_sites.txt", "w", encoding="utf-8") as f:
-    for s, h, st in sorted(dropped, key=lambda x: (x[2], str(x[1]))):
-        f.write(f"{st}\t{s.get('key')}\t{s.get('name')}\t{h}\n")
-print("剔除清单 dropped_sites.txt")
+# ---- 写入保护 ----
+# 老 gao 配置里大量站点是 csp_ 内置源（没有 js 规则、ext 也不是域名），
+# 这类站无法提取主域名，只能“保守保留”。一旦规则缓存缺失或上游改动，
+# 剔除数就会掉到个位数，把已经剔干净的配置“恢复”成未剔版本 —— 属于自动退化。
+# 因此：保留数明显多于上次时不覆盖；--report 模式下只报告。
+REPORT_ONLY = "--report" in sys.argv
+prev_n = 0
+try:
+    prev_n = len(json.load(open("pruned_config.json", encoding="utf-8"))["sites"])
+except Exception:
+    pass
+degraded = bool(prev_n) and len(final) > prev_n * 1.05
+
+if degraded:
+    print(f"警告：本次保留 {len(final)} 站 > 上次 {prev_n} 站 ×1.05，"
+          f"判定为剔站失效（规则缓存缺失/上游改动），保留旧 pruned_config.json 不覆盖")
+if REPORT_ONLY:
+    print("报告模式：不写入 pruned_config.json / dropped_sites.txt")
+
+if not (REPORT_ONLY or degraded):
+    json.dump(out, open("pruned_config.json", "w", encoding="utf-8"),
+              ensure_ascii=False, separators=(",", ":"))
+    print(f"pruned_config.json {os.path.getsize('pruned_config.json')/1024:.1f}KB")
+    with open("dropped_sites.txt", "w", encoding="utf-8") as f:
+        for s, h, st in sorted(dropped, key=lambda x: (x[2], str(x[1]))):
+            f.write(f"{st}\t{s.get('key')}\t{s.get('name')}\t{h}\n")
+    print("剔除清单 dropped_sites.txt")

@@ -1,9 +1,19 @@
 name: weekly-prune
 
+# 每周对备用配置做一次站点健康巡检。
+# 默认「只报告不改文件」：老 gao 配置里大量 csp_ 内置源无法提取主域名，
+# 一旦规则缓存缺失就会把已剔干净的 252 站“恢复”成 303 站（自动退化）。
+# 想真正写入时，手动 Run workflow 并把 report_only 保持 false 即可（脚本内置保护：
+# 保留数比上次多 5% 以上时仍会拒绝覆盖）。
 on:
   schedule:
-    - cron: "47 21 * * 0"   # 每周日 UTC 21:47 = 北京时间周一 05:47
-  workflow_dispatch: {}
+    - cron: "47 21 * * 0" # 每周日 UTC 21:47 = 北京时间周一 05:47
+  workflow_dispatch:
+    inputs:
+      report_only:
+        description: "只生成报告，不覆盖 pruned_config.json"
+        type: boolean
+        default: true
 
 permissions:
   contents: write
@@ -22,14 +32,30 @@ jobs:
         with:
           python-version: "3.11"
 
-      - name: 按DNS判定剔除已死站点
-        run: python scripts/prune_sites.py
+      - name: 按DNS判定站点存活
+        run: |
+          if [ "${{ inputs.report_only }}" = "false" ]; then
+            python scripts/prune_sites.py
+          else
+            python scripts/prune_sites.py --report
+          fi
+
+      - name: 写入运行摘要
+        if: always()
+        run: |
+          {
+            echo "## 站点巡检结果"
+            echo ""
+            echo '```'
+            echo "（完整输出见上方步骤日志；剔除清单文件 dropped_sites.txt 仅在写入模式下更新）"
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"
 
       - name: 提交（有变化才提交）
         run: |
           git config user.name "chenqq2026"
           git config user.email "chenqq2026@users.noreply.github.com"
-          if git diff --quiet -- pruned_config.json; then
+          if git diff --quiet -- pruned_config.json dropped_sites.txt; then
             echo "无变化，跳过提交"
           else
             git add pruned_config.json dropped_sites.txt

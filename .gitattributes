@@ -1,0 +1,3 @@
+*.jar binary
+*.m3u text eol=lf
+*.json text eol=lf
