@@ -1,15 +1,15 @@
 {
   "urls": [
     {
-      "name": "主力·qist日更仓(157站/每日bot更新)",
-      "url": "https://qist.wyfc.qzz.io/jsm.json"
-    },
-    {
-      "name": "自持·8直连CMS+405直播(不依赖gao)",
+      "name": "①自持·8直连CMS+405直播(零依赖,最稳)",
       "url": "https://gh-proxy.com/https://raw.githubusercontent.com/chenqq2026/Tvbox-public/main/direct_cms.json"
     },
     {
-      "name": "备用·老gao仓(298spider,停更上游)",
+      "name": "②qist日更仓·今日快照(157站,jar已绝对化)",
+      "url": "https://gh-proxy.com/https://raw.githubusercontent.com/chenqq2026/Tvbox-public/main/jsm_fixed.json"
+    },
+    {
+      "name": "③老gao仓(298spider,停更上游兜底)",
       "url": "https://gh-proxy.com/https://raw.githubusercontent.com/chenqq2026/Tvbox-public/main/verified_config.json"
     }
   ]
