@@ -9,6 +9,8 @@ http://gmxw.7766.org:808/hls/102/index.m3u8
 http://gmxw.7766.org:808/hls/169/index.m3u8
 #EXTINF:-1 tvg-name="CCTV5" group-title="央视",CCTV5
 http://gmxw.7766.org:808/hls/93/index.m3u8
+#EXTINF:-1 tvg-name="CCTV5+" group-title="央视",CCTV5+
+http://223.78.65.165:9901/tsfile/live/0006_1.m3u8?key=txiptv&playlive=1&authid=0
 #EXTINF:-1 tvg-name="CCTV8" group-title="央视",CCTV8
 http://124.165.251.82:85/tsfile/live/0008_1.m3u8?key=txiptv&playlive=1&authid=0
 #EXTINF:-1 tvg-name="CGTN" group-title="央视",CGTN
@@ -27,8 +29,6 @@ http://live.zohi.tv/video/s10001-fztv-3/index.m3u8
 http://bp-resource-dfl.bestv.cn/148/3/video.m3u8
 #EXTINF:-1 tvg-name="东方卫视4K" group-title="卫视",东方卫视4K
 https://bp-resource-dfl.bestv.cn/148/3/video.m3u8
-#EXTINF:-1 tvg-name="人间卫视" group-title="卫视",人间卫视
-https://5ddce30eb4b55.streamlock.net/bltvhd/bltv1/chunklist_w511254805.m3u8
 #EXTINF:-1 tvg-name="内蒙古卫视" group-title="卫视",内蒙古卫视
 http://play1-qk.nmtv.cn/live/1769652018126032.m3u8
 #EXTINF:-1 tvg-name="大湾区卫视" group-title="卫视",大湾区卫视
@@ -441,8 +441,6 @@ http://l.cztvcloud.com/channels/lantian/SXwuyi1/720p.m3u8
 https://ls.qingting.fm/live/20198/64k.m3u8
 #EXTINF:-1 tvg-name="武进新闻" group-title="其他",武进新闻
 https://live.wjyanghu.com/live/CH1.m3u8
-#EXTINF:-1 tvg-name="武进生活" group-title="其他",武进生活
-http://live.wjyanghu.com/live/CH2.m3u8
 #EXTINF:-1 tvg-name="永嘉新闻综合" group-title="其他",永嘉新闻综合
 http://l.cztvcloud.com/channels/lantian/SXyongjia1/720p.m3u8
 #EXTINF:-1 tvg-name="永城综合" group-title="其他",永城综合
@@ -491,8 +489,6 @@ https://gcalic.v.myalicdn.com/gc/taishan06_1/index.m3u8
 https://gcalic.v.myalicdn.com/gc/hkts02_1/index.m3u8
 #EXTINF:-1 tvg-name="泰山碧霞祠" group-title="其他",泰山碧霞祠
 https://gcalic.v.myalicdn.com/gc/hkts03_1/index.m3u8
-#EXTINF:-1 tvg-name="泸县新闻综合" group-title="其他",泸县新闻综合
-http://lxfile.lxxcb.cn:80/nmip-media/channellive/channel103799/playlist.m3u8
 #EXTINF:-1 tvg-name="洞头综合" group-title="其他",洞头综合
 http://l.cztvcloud.com/channels/lantian/SXdongtou1/720p.m3u8
 #EXTINF:-1 tvg-name="津南一套" group-title="其他",津南一套
@@ -675,6 +671,8 @@ http://l.cztvcloud.com/channels/lantian/SXqujiang1/720p.m3u8?zzhed
 https://liveout.xntv.tv/a65jur/96iln2.m3u8?zqinghd
 #EXTINF:-1 tvg-name="西峰综合" group-title="其他",西峰综合
 https://play.kankanlive.com/live/1683944827526991.m3u8
+#EXTINF:-1 tvg-name="让子弹飞" group-title="其他",让子弹飞
+https://vip.ffzy-play7.com/20230116/11563_b9f44814/index.m3u8
 #EXTINF:-1 tvg-name="诸暨新闻综合" group-title="其他",诸暨新闻综合
 http://l.cztvcloud.com/channels/lantian/SXzhuji3/720p.m3u8?zzhed
 #EXTINF:-1 tvg-name="象山新闻综合" group-title="其他",象山新闻综合
