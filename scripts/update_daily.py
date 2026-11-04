@@ -640,7 +640,7 @@ try:
     spare["logo"] = ""
     spare["warningText"] = "本配置由公开源自动聚合（含肥猫等），本仓库仅做镜像，仅供学习交流，请勿商用"
     # 镜像 spider jar
-    jar_mirror = False
+    jar_mirror = jar_reused = False
     raw_spider = str(spare.get("spider") or "")
     m = re.match(r"^(https?://[^;]+)", raw_spider)
     if m:
@@ -649,20 +649,27 @@ try:
             import io as _io
             import zipfile as _zip
             ok_zip = jb[:2] == b"PK" and 300 * 1024 < len(jb) < 30 * 1048576
-            if ok_zip:
-                _zip.ZipFile(_io.BytesIO(jb)).namelist()   # 能正常打开才算数
-                open(SPARE_JAR, "wb").write(jb)
-                spare["spider"] = (GAO_PROXY + GH_RAW_SELF + "jar/spare_spider.jar;md5;"
-                                   + hashlib.md5(jb).hexdigest())
-                jar_mirror = True
+            if not ok_zip:
+                raise ValueError(f"不是合法 jar（头部 {jb[:2]!r}，{len(jb)/1024:.0f}KB）")
+            _zip.ZipFile(_io.BytesIO(jb)).namelist()   # 能正常打开才算数
+            open(SPARE_JAR, "wb").write(jb)
+            spare["spider"] = (GAO_PROXY + GH_RAW_SELF + "jar/spare_spider.jar;md5;"
+                               + hashlib.md5(jb).hexdigest())
+            jar_mirror = True
         except Exception as e:
-            print(f"  jar 镜像失败，沿用对方 spider（依赖其 CDN）: {type(e).__name__}")
+            print(f"  新 jar 拉取/校验失败: {type(e).__name__} {e}")
+    # 关键：拉不到新 jar 时绝不能退回上游那个第三方 CDN 的 spider，
+    # 否则本仓库已镜像的 jar 白镜像，500+ 站又回到依赖别人 CDN 的状态。
+    if not jar_mirror and os.path.exists(SPARE_JAR):
+        spare["spider"] = (GAO_PROXY + GH_RAW_SELF + "jar/spare_spider.jar;md5;"
+                           + hashlib.md5(open(SPARE_JAR, "rb").read()).hexdigest())
+        jar_reused = True
     json.dump(spare, open("spare_juhe.json", "w", encoding="utf-8", newline="\n"),
               ensure_ascii=False, separators=(",", ":"))
     spare_stat = {"ok": True, "sites": n_sites, "lives": len(spare["lives"]),
-                  "jar_mirrored": jar_mirror}
+                  "jar_mirrored": jar_mirror, "jar_reused": jar_reused}
     print(f"spare_juhe.json 已更新：{n_sites} 站 / {len(spare['lives'])} 直播 / "
-          f"jar {'已镜像' if jar_mirror else '仍指上游'}")
+          f"jar {'本次镜像' if jar_mirror else ('沿用本地已有' if jar_reused else '仍指上游')}")
 except Exception as e:
     print(f"备用聚合更新失败，保留旧 spare_juhe.json: {type(e).__name__} {e}")
 
