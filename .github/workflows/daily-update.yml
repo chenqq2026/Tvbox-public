@@ -43,10 +43,10 @@ jobs:
         run: |
           git config user.name "chenqq2026"
           git config user.email "chenqq2026@users.noreply.github.com"
-          if git diff --quiet -- jsm_fixed.json live_verified.m3u config_all.json live_speed.json health.json jar/spider.jar; then
+          if git diff --quiet -- jsm_fixed.json live_verified.m3u config_all.json live_speed.json health.json jar/spider.jar spare_juhe.json jar/spare_spider.jar; then
             echo "内容无变化，跳过提交"
           else
-            git add jsm_fixed.json live_verified.m3u config_all.json live_speed.json health.json jar/spider.jar
+            git add jsm_fixed.json live_verified.m3u config_all.json live_speed.json health.json jar/spider.jar spare_juhe.json jar/spare_spider.jar
             git commit -m "auto update: 源/直播/解析器 $(date -u +%Y%m%d%H%M)"
             git push
           fi

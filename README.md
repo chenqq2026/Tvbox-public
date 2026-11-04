@@ -51,7 +51,8 @@ https://ghproxy.net/https://raw.githubusercontent.com/chenqq2026/Tvbox-public/ma
 4. **直连 CMS 探活**：8 个自持站当天返回不了片单的临时剔除
 5. **解析器**：实测排序，把挂掉的排到后面
 6. **EPG**：探测候选源，选可用的写入配置
-7. **写 `health.json`** + 有变化才提交
+7. **备用聚合镜像**：拉 `Lightconer/tvbox-ysc-config` 的单仓聚合 → 校验站数 → 剔掉它夹带的假直播源 → 连它的 spider jar 一起镜像 → 写 `spare_juhe.json`（任何一步失败都保留旧文件，不覆盖）
+8. **写 `health.json`** + 有变化才提交
 
 `.github/workflows/weekly-prune.yml`，每周一 05:47：对备用配置做站点健康巡检，
 用 DNS 判定识别「域名已不存在」和「被 DNS 污染」的站点。**默认只报告不写文件**——
@@ -84,6 +85,8 @@ https://ghproxy.net/https://raw.githubusercontent.com/chenqq2026/Tvbox-public/ma
 | `jsm_fixed.json` | qist 今日快照（spider 已绝对化） |
 | `jar/spider.jar` | spider 引擎镜像，配置里指向这里而不是 qist 上游 |
 | `dropped_sites.txt` | 每周剔站清单（站点 key / 名称 / 判定原因） |
+| `spare_juhe.json` | **备用聚合配置**（517 站），主配置出问题时临时顶替用，每天自动镜像 |
+| `jar/spare_spider.jar` | `spare_juhe.json` 专用的 spider 引擎（1MB），跟着备用配置一起更新 |
 
 ---
 
@@ -127,20 +130,39 @@ https://ghproxy.net/https://raw.githubusercontent.com/chenqq2026/Tvbox-public/ma
 主配置哪天整体出问题（源站大面积失效、jar 拉不到），遥控器里临时换一个顶上用。
 **下面每个地址都是当天亲手拉过、解析成功的**，没通过的单独列在最后，省得你再一个个试。
 
-### 🟢 第一梯队：GitHub 上的自动聚合仓（单仓，站最多）
+### 🟢 第一梯队：本仓库镜像（推荐，地址固定不会变）
 
-它们每天的 Actions 会把肥猫、饭太硬、王二小、老刘备、小马、欧歌、4K小盒子等
-十几个源抓下来合并成一个单仓文件——**等于把肥猫和饭太硬的镜像搬过来了**。
-国内直接拉 `raw.githubusercontent.com` 不通，必须套 gh-proxy：
+有个仓库 `Lightconer/tvbox-ysc-config` 每天用 Actions 把肥猫、饭太硬、王二小、老刘备、
+小马、欧歌、4K小盒子等十几个源抓下来合并成一个单仓文件——**等于把肥猫和饭太硬的镜像搬过来了**。
+本仓库每天自动把它镜像一份，好处是地址固定、干净：
 
-| 名称 | 地址 | 实测 |
-|---|---|---|
-| 影视仓聚合（推荐） | `https://gh-proxy.com/https://raw.githubusercontent.com/Lightconer/tvbox-ysc-config/main/output/%E5%8D%95%E4%BB%93%E8%81%9A%E5%90%88.json` | 517 站 / 21 直播，194KB，1.1s，最后更新 11-03 |
-| 影视仓聚合（备） | `https://gh-proxy.com/https://raw.githubusercontent.com/rtian001/tvbox/main/output/%E5%8D%95%E4%BB%93%E8%81%9A%E5%90%88.json` | 515 站 / 21 直播，193KB，1.1s，最后更新 10-27 |
+```
+https://gh-proxy.com/https://raw.githubusercontent.com/chenqq2026/Tvbox-public/main/spare_juhe.json
+```
 
-> ⚠️ 这两个配置的 `spider` 字段指向一个**改名成 `.png` 的 jar**，挂在第三方 CDN
-> （`ss1.eisite.cn`）上。这是 TVBox 圈绕检测的常见做法，但意味着：**那个 CDN 一挂，
-> 这五百多个站会全部打不开**。当备用可以，别当主配置。
+| 项 | 值 |
+|---|---|
+| 站点 | 517 个（含 `肥猫`、`csp_FeiMaoUC` 等） |
+| 直播 | 17 条（上游 21 条，已剔除其夹带的 EPG 测试源） |
+| spider | **已镜像到本仓库** `jar/spare_spider.jar`，带 md5 校验 |
+| 更新 | 每天随主配置一起同步；上游挂了保留最后一次可用的 |
+
+镜像时做的事：剔掉它夹带的 EPG 测试直播源（21→17 条）、清空它的第三方壁纸和桌面图标
+（`深色壁纸.xxooo.cf` / `w.junce.dpdns.org`，换域名就变叉）、把 `warningText` 改成标注本仓库只做镜像。
+
+> 它的 `hosts`（5 条）和 `proxy`（17 条）字段**原样保留**——那些是把咪咕直播、海外源
+> 的域名重定向到可用 CDN 的规则，删了会大面积播放失败。知情的点：这意味着配置会在
+> 播放器层面改写部分域名的解析，介意就别用备用源，主配置没有这些东西。
+
+> 上游原本的 `spider` 指向一个**改名成 `.png` 的 jar**，挂在第三方 CDN（`ss1.eisite.cn`）上，
+> 那个 CDN 一挂五百多个站全废。镜像时连 jar 一起搬过来了，所以现在只依赖本仓库自己。
+
+上游原始地址（本仓库镜像的来源，它自己挂了不影响你）：
+
+```
+https://gh-proxy.com/https://raw.githubusercontent.com/Lightconer/tvbox-ysc-config/main/output/%E5%8D%95%E4%BB%93%E8%81%9A%E5%90%88.json
+https://gh-proxy.com/https://raw.githubusercontent.com/rtian001/tvbox/main/output/%E5%8D%95%E4%BB%93%E8%81%9A%E5%90%88.json
+```
 
 ### 🟡 第二梯队：国内原站（直连，站数少但不用套代理）
 

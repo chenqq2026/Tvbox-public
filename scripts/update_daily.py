@@ -609,6 +609,63 @@ print(f"config_all.json: sites={len(merged_sites)} "
       f"(自持{len(direct_sites)}+qist{len(jsm.get('sites', []))}) "
       f"parses={len(merged_parses)} lives={len(merged_lives)}")
 
+# ---------- 4b. 备用聚合镜像 spare_juhe.json ----------
+# 主配置挂了时临时顶替用。上游是 Lightconer/tvbox-ysc-config 每日把肥猫/饭太硬/王二小
+# 等十几个源合并成的单仓文件。镜像到本仓库有两个目的：
+#   1. 地址变成干净的英文短路径（原路径含 http://单仓聚合.json 的中文编码，难记）
+#   2. 把它的 spider 也镜像下来（对方用改名成 .png 的 jar 挂第三方 CDN，
+#      那个 CDN 挂则 500+ 站全废），改写成本仓库 jar，彻底自持。
+# 任何一步失败都不覆盖旧文件——宁可留着上一次能用的。
+print("== 4b. 备用聚合镜像 ==")
+SPARE_SLUG = urllib.parse.quote("单仓聚合.json")
+SPARE_SRC = [
+    GAO_PROXY + "https://raw.githubusercontent.com/Lightconer/tvbox-ysc-config/main/output/" + SPARE_SLUG,
+    "https://ghproxy.net/https://raw.githubusercontent.com/Lightconer/tvbox-ysc-config/main/output/" + SPARE_SLUG,
+    "https://raw.githubusercontent.com/Lightconer/tvbox-ysc-config/main/output/" + SPARE_SLUG,
+]
+SPARE_JAR = "jar/spare_spider.jar"
+spare_stat = {"ok": False}
+try:
+    spare = json.loads(fetch_first(SPARE_SRC, timeout=45).decode("utf-8", "ignore").lstrip("\ufeff"))
+    n_sites = len(spare.get("sites", []))
+    if n_sites < 300:
+        raise ValueError(f"只有 {n_sites} 站，疑似上游降级，保留旧文件")
+    # 顺手剔掉上游夹带的假直播源（epg.pw 那种测试频道）
+    spare["lives"] = [l for l in spare.get("lives", [])
+                      if str(l.get("url") or "").startswith("http")
+                      and not BAD_LIVE.search(str(l.get("url")) + " " + str(l.get("name") or ""))]
+    # 壁纸和桌面图标是对方自己的第三方域名（换域名就变叉），清掉用播放器默认的。
+    # hosts / proxy 保留：它们是让海外源和咪咕直播能播的关键，动了会大面积失效。
+    spare["wallpaper"] = ""
+    spare["logo"] = ""
+    spare["warningText"] = "本配置由公开源自动聚合（含肥猫等），本仓库仅做镜像，仅供学习交流，请勿商用"
+    # 镜像 spider jar
+    jar_mirror = False
+    raw_spider = str(spare.get("spider") or "")
+    m = re.match(r"^(https?://[^;]+)", raw_spider)
+    if m:
+        try:
+            jb = get(m.group(1), timeout=45, n=32 * 1024 * 1024)
+            import io as _io
+            import zipfile as _zip
+            ok_zip = jb[:2] == b"PK" and 300 * 1024 < len(jb) < 30 * 1048576
+            if ok_zip:
+                _zip.ZipFile(_io.BytesIO(jb)).namelist()   # 能正常打开才算数
+                open(SPARE_JAR, "wb").write(jb)
+                spare["spider"] = (GAO_PROXY + GH_RAW_SELF + "jar/spare_spider.jar;md5;"
+                                   + hashlib.md5(jb).hexdigest())
+                jar_mirror = True
+        except Exception as e:
+            print(f"  jar 镜像失败，沿用对方 spider（依赖其 CDN）: {type(e).__name__}")
+    json.dump(spare, open("spare_juhe.json", "w", encoding="utf-8", newline="\n"),
+              ensure_ascii=False, separators=(",", ":"))
+    spare_stat = {"ok": True, "sites": n_sites, "lives": len(spare["lives"]),
+                  "jar_mirrored": jar_mirror}
+    print(f"spare_juhe.json 已更新：{n_sites} 站 / {len(spare['lives'])} 直播 / "
+          f"jar {'已镜像' if jar_mirror else '仍指上游'}")
+except Exception as e:
+    print(f"备用聚合更新失败，保留旧 spare_juhe.json: {type(e).__name__} {e}")
+
 # ---------- 5. health.json 健康快照 ----------
 print("== 5. 健康快照 ==")
 _kb = sorted([k for _c, _u, k in final if k > 0])
@@ -636,6 +693,7 @@ health = {
         "slow_tagged": sum(1 for _c, _u, k in final if 0 < k < 500),
     },
     "epg": epg_url or "无可用源",
+    "spare": spare_stat,
 }
 json.dump(health, open("health.json", "w", encoding="utf-8", newline="\n"),
           ensure_ascii=False, indent=2)
