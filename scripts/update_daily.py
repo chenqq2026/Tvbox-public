@@ -558,15 +558,21 @@ merged_lives = [{"name": "自建·已验证频道", "type": 0, "url": LIVE_URL,
 
 
 def live_has_channels(u):
+    """够用才留：少于 20 台没实用价值；多于 800 条基本是 EPG 测试源
+    （实测 epg.pw/test_channels.m3u 塞了 1204 条「仅供测试 epg 准确性」的假台）"""
     try:
         t = get(u, timeout=15, n=400000).decode("utf-8", "ignore")
     except Exception:
         return False
-    return len(re.findall(r"^#EXTINF|^[^#\n]+,", t, re.M)) >= 5
+    n = len(re.findall(r"^#EXTINF|^[^#\n]+,", t, re.M))
+    return 20 <= n <= 800
 
 
+# 明确不是给人看直播的源：EPG 测试频道、占位测试文件
+BAD_LIVE = re.compile(r"epg\.pw|test_?channels|/test\.m3u|测试频道", re.I)
 qist_lives = [l for l in jsm.get("lives", [])
-              if str(l.get("url") or "").startswith("http")]
+              if str(l.get("url") or "").startswith("http")
+              and not BAD_LIVE.search(str(l.get("url")) + " " + str(l.get("name") or ""))]
 if qist_lives:
     with cf.ThreadPoolExecutor(6) as ex:
         keep = list(ex.map(lambda l: live_has_channels(str(l["url"])), qist_lives))
