@@ -12,14 +12,32 @@ TVBox / FongMi 影视 / OK影视 的配置源。**每天北京时间 05:17 由 G
 https://gh-proxy.com/https://raw.githubusercontent.com/chenqq2026/Tvbox-public/main/config_all.json
 ```
 
-### 备用（gh-proxy 抽风时换这个，内容完全相同）
+### 备用加速通道（内容完全相同，只换开头域名）
+
+`gh-proxy.com` 抽风时，把地址开头的 `https://gh-proxy.com/` 换成下表任意一个，
+**后面整段路径一个字都不要改**：
+
+| 通道 | 主配置 | 备用聚合 | 直播 m3u | jar | 备注 |
+|---|---|---|---|---|---|
+| `gh-proxy.com` | 🟢 3.0s | 🟢 2.6s | 🟢 3.9s | 🟢 19.3s | 首选 |
+| `ghproxy.net` | 🟢 3.0s | 🟢 2.0s | 🟢 5.8s | 🟡 170s | 次选，拉 jar 慢 |
+| `ghfast.top` | 🟢 7.0s | 🟢 3.0s | 🟢 2.3s | 🟢 5.2s | jar 最快 |
+| `ghproxy.cc` | 🟢 3.1s | 🟢 4.5s | 🟢 5.8s | 🟢 13.3s | 备选 |
+| `cdn.jsdelivr.net/gh/chenqq2026/Tvbox-public@main/` | 🟢 2.4s | 🟢 3.0s | 🔴 超时 | 🔴 失败 | 最后备选，见下方警告 |
+
+以 `ghfast.top` 为例：
 
 ```
-https://ghproxy.net/https://raw.githubusercontent.com/chenqq2026/Tvbox-public/main/config_all.json
+https://ghfast.top/https://raw.githubusercontent.com/chenqq2026/Tvbox-public/main/config_all.json
+https://ghfast.top/https://raw.githubusercontent.com/chenqq2026/Tvbox-public/main/spare_juhe.json
 ```
 
-> 为什么不推荐 jsDelivr：它 CDN 缓存 12 小时、客户端本地缓存 7 天。配置每天更新，
-> 用 jsDelivr 会导致「明明更新了，盒子上还是旧的」，很容易误判成自动更新失效。
+> ⚠️ **jsDelivr 只适合应急**：① 路径格式不同，是 `cdn.jsdelivr.net/gh/用户/仓库@main/文件`，
+> 没有 `https://raw.githubusercontent.com/` 这一段；② **只提供配置，直播清单和 jar 都拉不到**；
+> ③ CDN 缓存 12 小时 + 客户端缓存 7 天，配置每天更新，用它会出现「明明更新了盒子上还是旧的」，
+> 很容易误判成自动更新失效。
+
+> 实测时间 2026-11-04 13:05，数值仅代表当时网络，只作相对参考。
 
 ---
 
@@ -29,7 +47,7 @@ https://ghproxy.net/https://raw.githubusercontent.com/chenqq2026/Tvbox-public/ma
 |---|---|---|
 | 站点 | 约 165 个：8 个实测直连 CMS（置顶）+ 157 个 spider 站 | 每天随 qist 上游更新；直连站每天探活 |
 | spider 引擎 | `jar/spider.jar`，**镜像在本仓库**，带 md5 校验 | 每天随 qist 更新，上游删库也不影响 |
-| 直播 | 约 480 条线路 / 320+ 个频道（CCTV1–17 每台 3 条 + 卫视全量），数字随上游浮动 | 双源合并，逐个验证 + 逐条测速 + 上游撤台复验 |
+| 直播 | 约 478 条线路 / 347 个频道（CCTV1–17 每台 3 条 + 卫视全量），数字随上游浮动 | 双源合并，逐个验证 + 逐条测速 + 上游撤台复验 |
 | 节目单 | EPG：`epg.cdn.loc.cc`（JSON 格式） | 每天探测，源挂了自动换下一个 |
 | 台标 | `logo.wyfc.qzz.io` | 静态 |
 | 解析器 | 27 个（去重后），实测可用的排前面 | 每天实测排序 |
@@ -95,7 +113,8 @@ https://ghproxy.net/https://raw.githubusercontent.com/chenqq2026/Tvbox-public/ma
 **Q：提示「解析配置失败」**
 1. 先确认用的是 `config_all.json`（单仓）。`config.json` 是多仓格式，部分壳不认。
 2. 再重试 2 次——gh-proxy 偶发瞬断，TVBox 拉取那一刻断了就会报这个。
-3. 还不行换备用域名（把 `gh-proxy.com` 换成 `ghproxy.net`）。
+3. 还不行换备用通道，把开头的 `gh-proxy.com` 换成 `ghfast.top` / `ghproxy.cc` / `ghproxy.net`
+   任意一个，后面路径不动（见「一、导入地址」的通道表）。
 
 **Q：能进配置，但点开站点没反应 / 一直转圈**
 大概率是 spider 引擎没加载。到 `health.json` 看 `jar.declared_match` 是否为 `true`；
@@ -166,12 +185,16 @@ https://gh-proxy.com/https://raw.githubusercontent.com/rtian001/tvbox/main/outpu
 
 ### 🟡 第二梯队：国内原站（直连，站数少但不用套代理）
 
-| 名称 | 地址 | 实测 |
-|---|---|---|
-| 老刘备 | `https://raw.liucn.cc/box/m.json` | 单仓 234 站 / 3 直播（文件以 `//` 注释开头，TVBox 能认） |
-| 王二小 | `https://9280.kstore.space/wex.json` | 单仓 63 站 / 2 直播 |
-| 小马 | `https://szyyds.cn/tv/x.json` | 单仓 62 站 / 10 直播 |
-| 小盒子 | `http://xhztv.top/xhz` | 单仓 54 站 / 1 直播 |
+| 名称 | 地址 | 实测 | 备注 |
+|---|---|---|---|
+| 王二小 | `https://9280.kstore.space/wex.json` | 🟢 63 站 / 2 直播 / 0.2s | 直连最快 |
+| 小马 | `https://szyyds.cn/tv/x.json` | 🟢 62 站 / 10 直播 / 0.1s | 直连最快 |
+| 小盒子 | `http://xhztv.top/xhz` | 🟢 54 站 / 1 直播 / 4.8s | 直连 |
+| 老刘备 | `https://raw.liucn.cc/box/m.json` | 🟡 234 站 / 3 直播 / **直连 30.3s** | 套 gh-proxy 后 0.8s，建议走代理 |
+
+> 这四个文件有的以 `//` 注释或 UTF-8 BOM 开头，用脚本直接 `json.loads` 会报错，
+> 但 **TVBox 自己能认**，不用处理。判断「能不能用」时要先去掉 BOM 和注释行再解析，
+> 否则会把好好的源误判成坏的——我第一遍就误判了四个。
 
 ### 🔵 多仓格式（**你的壳不支持，导入会报「解析配置失败」**，仅记录）
 
@@ -185,7 +208,10 @@ https://gh-proxy.com/https://raw.githubusercontent.com/rtian001/tvbox/main/outpu
 肥猫（`肥猫.net/tv` 404、`肥猫.com` 502、`我不是.肥猫.live` 404）、
 饭太硬（主域超时、`饭太硬.net/tv` 返回的是一张**口令图片**、`饭太硬.top/tv` 返回防爬 HTML）、
 欧歌 `tv.nxog.top/m/`（连接重置）、巧技 `cdn.qiaoji8.com`、传说、Ray、七星、天微、
-4K小盒子、拾光、环宇轩、道长。
+4K小盒子（`xhztv.top/4k.json`）、拾光、环宇轩、道长。
+
+> 王二小注意区分：`9280.kstore.space/wex.json` 可用（63 站），
+> 而它的主域 `www.王二小放牛娃.top/tv` 今天返回的不是 JSON，别用那个。
 
 这些站靠域名轮换 + 图片口令防封，今天通明天就换；想追最新地址得去它们的 Telegram 频道。
 **这也正是本仓库不把它们的站点合并进主配置的原因之一**——合并进来等于给自己埋一个随时会炸的依赖。
