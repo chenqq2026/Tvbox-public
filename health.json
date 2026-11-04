@@ -1,5 +1,5 @@
 {
-  "updated": "2026-11-04 01:26:55",
+  "updated": "2026-11-04 09:59:42",
   "jar": {
     "md5": "c6c7cbd14359dee31a97abb7ec27df19",
     "size_mb": 1.84,
@@ -14,15 +14,19 @@
   },
   "parses": {
     "total": 27,
-    "alive": 12,
+    "alive": 9,
     "tested": 25
   },
   "live": {
-    "lines": 404,
-    "channels": 302,
-    "median_kbps": 1322,
-    "p10_kbps": 410,
-    "slow_tagged": 35
+    "lines": 485,
+    "computed_lines": 485,
+    "stale": false,
+    "channels": 357,
+    "measured_now": 308,
+    "inherited_kbps": 7,
+    "median_kbps": 5252,
+    "p10_kbps": 963,
+    "slow_tagged": 16
   },
   "epg": "https://epg.cdn.loc.cc/?ch={name}&date={date}"
 }

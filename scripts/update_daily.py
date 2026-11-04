@@ -179,6 +179,16 @@ for c, u in channels:
         uniq.append((c, u))
 print(f"拉到 {len(uniq)} 个频道，开始逐个验证...")
 
+# 上次实测通过的线路（live_speed.json 的 url→kbps），用于本次网络够不着时兜底。
+# CI 跑在海外机房，到国内 IPTV 源的可达性远低于家宽：本次连不上 ≠ 线路已死。
+# 没有这层兜底时，每天在 CI 里跑会把好线一天天切少（实测 534→404 条、432→302 频道）。
+prev_speed = {}
+try:
+    for _c, _u, _k in json.load(open("live_speed.json", encoding="utf-8")):
+        prev_speed[_u] = _k
+except Exception:
+    pass
+
 
 def playable(u, attempt=2):
     """失败重试一次，降低网络抖动造成的误判"""
@@ -204,6 +214,15 @@ if failed:
             if ok:
                 verified.append((c, u))
     print(f"二次补测后 {len(verified)}/{len(uniq)}")
+
+# 兜底：本轮两测都不通、但上次实测通过的线路仍然保留（标记为未复验）。
+# 判据收紧一半——只认上次测到的 url，且必须仍在上游 m3u 里（上游撤了就不留）。
+_vset = {u for _c, u in verified}
+rescued = [(c, u) for c, u in failed if u not in _vset and u in prev_speed]
+if rescued:
+    verified.extend(rescued)
+    print(f"沿用上次实测通过 {len(rescued)} 条（本次不可达，按可用保留，不当作死线）")
+print(f"最终进入测速 {len(verified)}/{len(uniq)}")
 
 
 def grp(n):
@@ -270,12 +289,19 @@ def measure(u):
 
 
 speed = {}
+inherited = measured = 0
 ts = time.time()
 with cf.ThreadPoolExecutor(12) as ex:
     for (c, u), k in zip(verified, ex.map(lambda p: measure(p[1]), verified)):
+        if k > 0:
+            measured += 1
+        elif prev_speed.get(u, 0) > 0:
+            k = prev_speed[u]      # 本次测不出，沿用上次实测值（多为 CI 海外网络够不着）
+            inherited += 1
         speed[u] = k
 known = [v for v in speed.values() if v > 0]
-print(f"测速完成 {len(known)}/{len(verified)} 条，用时 {time.time()-ts:.0f}s")
+print(f"测速完成 {len(known)}/{len(verified)} 条"
+      f"（本次实测 {measured}，沿用上次 {inherited}），用时 {time.time()-ts:.0f}s")
 if known:
     known.sort()
     print(f"带宽中位数 {known[len(known)//2]} kbps | 最低 {known[0]} | 最高 {known[-1]}")
@@ -317,15 +343,54 @@ for m in missing:
 if restored:
     print(f"关键频道兜底补入: {restored}")
 
-# 保险：若本次结果比现有文件少 20% 以上，判定为网络抖动，保留旧文件不覆盖
+
+# 上游会周期性精简（实测 vbskycn 从 404 频道降到 300），撤掉的不等于死掉。
+# 把上一版 m3u 里「上游已不再提供、但此刻仍能播」的线路复验一遍留下来，
+# 频道数就不会因为上游瘦身而莫名少一大截（实测 432 → 327）。
+def clean_name(n):
+    return re.sub(r"（慢）$", "", re.sub(r"▪\d+$", "", n)).strip()
+
+
+try:
+    old_m3u = parse_m3u(open("live_verified.m3u", encoding="utf-8").read())
+except FileNotFoundError:
+    old_m3u = []
+new_urls = {u for _c, u, _k in final}
+carry = [(clean_name(c), u) for c, u in old_m3u
+         if u not in new_urls and clean_name(c)]
+if carry:
+    with cf.ThreadPoolExecutor(10) as ex:
+        carry_ok = [((c, u), ok) for (c, u), ok in
+                    zip(carry, ex.map(lambda p: playable(p[1], attempt=1), carry)) if ok]
+    cnt = {}
+    for c, _u, _k in final:
+        cnt[c.replace(" ", "")] = cnt.get(c.replace(" ", ""), 0) + 1
+    kept_carry = 0
+    for (c, u) in [p for p, ok in carry_ok]:
+        key = c.replace(" ", "")
+        lim = 3 if (re.match(r"^CCTV\d+\+?$", key) or "卫视" in key) else 2
+        if cnt.get(key, 0) < lim:
+            final.append((c, u, prev_speed.get(u, 0)))
+            cnt[key] = cnt.get(key, 0) + 1
+            kept_carry += 1
+    print(f"上游已撤但复验可播 {len(carry_ok)}/{len(carry)} 条 → 补回 {kept_carry} 条")
+
+# 保险：只有「来源不可信」时才拦下本次结果。
+# 早期版本用「比上次少 20% 就保留旧文件」，结果上游真的精简频道时（实测 404→300 频道）
+# 会被永久冻住，线上文件一天天变旧、里面的死线也一直挂着。改为先判断来源可信度：
+# 上游拉到了、验证通过率够高 → 条数变少是上游真实变化，放行覆盖。
+src_ok = len(channels) > 200 and len(uniq) > 0 and len(verified) >= len(uniq) * 0.5
 prev = 0
+live_kept_prev = False
 try:
     prev = open("live_verified.m3u", encoding="utf-8").read().count("#EXTINF")
 except FileNotFoundError:
     pass
-if prev and len(final) < prev * 0.8:
-    print(f"警告：本次仅 {len(final)} 条，远少于现有 {prev} 条，"
-          f"判定为网络抖动，保留旧 live_verified.m3u 不覆盖")
+keep_prev = len(final) < 100 or (prev and len(final) < prev * 0.8 and not src_ok)
+if keep_prev:
+    live_kept_prev = True
+    print(f"警告：本次仅 {len(final)} 条（来源{'可信' if src_ok else '不可信'}，"
+          f"验证 {len(verified)}/{len(uniq)}，现有 {prev} 条），保留旧 live_verified.m3u 不覆盖")
 else:
     order = {"央视": 0, "卫视": 1, "其他": 2}
     final.sort(key=lambda x: (order[grp(x[0])], x[0], -x[2]))
@@ -345,7 +410,8 @@ else:
     json.dump([[c, u, k] for c, u, k in final],
               open("live_speed.json", "w", encoding="utf-8"),
               ensure_ascii=False, separators=(",", ":"))
-    print(f"live_verified.m3u 已生成（{len(final)} 条线路 / {len(by_ch)} 个频道，上次 {prev}）")
+    print(f"live_verified.m3u 已生成（{len(final)} 条线路 / "
+          f"{len({c.replace(' ', '') for c, _u, _k in final})} 个频道，上次 {prev}）")
 
 # ---------- 3. EPG 节目单源探测 ----------
 print("== 3. EPG 探测 ==")
@@ -552,8 +618,13 @@ health = {
     },
     "parses": parse_stat,
     "live": {
-        "lines": len(final),
-        "channels": len(by_ch),
+        # lines 是真正生效的那份 m3u 的条数；computed_lines 是本次算出来的（诊断用）
+        "lines": prev if live_kept_prev else len(final),
+        "computed_lines": len(final),
+        "stale": live_kept_prev,
+        "channels": len({c.replace(" ", "") for c, _u, _k in final}),
+        "measured_now": measured,
+        "inherited_kbps": inherited,
         "median_kbps": _kb[len(_kb) // 2] if _kb else 0,
         "p10_kbps": _kb[len(_kb) // 10] if _kb else 0,
         "slow_tagged": sum(1 for _c, _u, k in final if 0 < k < 500),
