@@ -1,5 +1,5 @@
 {
-  "updated": "2026-11-03 08:55:13",
+  "updated": "2026-11-04 01:26:55",
   "jar": {
     "md5": "c6c7cbd14359dee31a97abb7ec27df19",
     "size_mb": 1.84,
@@ -18,11 +18,11 @@
     "tested": 25
   },
   "live": {
-    "lines": 425,
-    "channels": 323,
-    "median_kbps": 1276,
-    "p10_kbps": 397,
-    "slow_tagged": 45
+    "lines": 404,
+    "channels": 302,
+    "median_kbps": 1322,
+    "p10_kbps": 410,
+    "slow_tagged": 35
   },
   "epg": "https://epg.cdn.loc.cc/?ch={name}&date={date}"
 }
