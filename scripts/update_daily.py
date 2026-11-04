@@ -119,7 +119,7 @@ for s in jsm.get("sites", []):
         v = str(s.get(f) or "")
         if v.startswith("./"):
             s[f] = "https://qist.wyfc.qzz.io/" + v[2:]
-json.dump(jsm, open("jsm_fixed.json", "w", encoding="utf-8"),
+json.dump(jsm, open("jsm_fixed.json", "w", encoding="utf-8", newline="\n"),
           ensure_ascii=False, separators=(",", ":"))
 print(f"jsm_fixed.json: sites={len(jsm.get('sites', []))} jar_md5={md5[:12]}")
 
@@ -406,9 +406,9 @@ else:
         lines.append(f'#EXTINF:-1 tvg-name="{c.replace(chr(32), "")}" '
                      f'group-title="{grp(c)}",{label}')
         lines.append(u)
-    open("live_verified.m3u", "w", encoding="utf-8").write("\n".join(lines) + "\n")
+    open("live_verified.m3u", "w", encoding="utf-8", newline="\n").write("\n".join(lines) + "\n")
     json.dump([[c, u, k] for c, u, k in final],
-              open("live_speed.json", "w", encoding="utf-8"),
+              open("live_speed.json", "w", encoding="utf-8", newline="\n"),
               ensure_ascii=False, separators=(",", ":"))
     print(f"live_verified.m3u 已生成（{len(final)} 条线路 / "
           f"{len({c.replace(' ', '') for c, _u, _k in final})} 个频道，上次 {prev}）")
@@ -597,7 +597,7 @@ cfg_all = {
     "ads": jsm.get("ads", []),
     "danmaku": jsm.get("danmaku", {}),
 }
-json.dump(cfg_all, open("config_all.json", "w", encoding="utf-8"),
+json.dump(cfg_all, open("config_all.json", "w", encoding="utf-8", newline="\n"),
           ensure_ascii=False, separators=(",", ":"))
 print(f"config_all.json: sites={len(merged_sites)} "
       f"(自持{len(direct_sites)}+qist{len(jsm.get('sites', []))}) "
@@ -631,7 +631,7 @@ health = {
     },
     "epg": epg_url or "无可用源",
 }
-json.dump(health, open("health.json", "w", encoding="utf-8"),
+json.dump(health, open("health.json", "w", encoding="utf-8", newline="\n"),
           ensure_ascii=False, indent=2)
 print(json.dumps(health, ensure_ascii=False, indent=2))
 print("DONE")

@@ -207,7 +207,7 @@ out = {
     "rules": cfg.get("rules", []),
     "ads": cfg.get("ads", []),
 }
-json.dump(out, open("pruned_config.json", "w", encoding="utf-8"),
+json.dump(out, open("pruned_config.json", "w", encoding="utf-8", newline="\n"),
           ensure_ascii=False, separators=(",", ":"))
 
 dead_nx = sum(1 for _, _, st in dropped if st == "NXDOMAIN")
@@ -235,10 +235,10 @@ if REPORT_ONLY:
     print("报告模式：不写入 pruned_config.json / dropped_sites.txt")
 
 if not (REPORT_ONLY or degraded):
-    json.dump(out, open("pruned_config.json", "w", encoding="utf-8"),
+    json.dump(out, open("pruned_config.json", "w", encoding="utf-8", newline="\n"),
               ensure_ascii=False, separators=(",", ":"))
     print(f"pruned_config.json {os.path.getsize('pruned_config.json')/1024:.1f}KB")
-    with open("dropped_sites.txt", "w", encoding="utf-8") as f:
+    with open("dropped_sites.txt", "w", encoding="utf-8", newline="\n") as f:
         for s, h, st in sorted(dropped, key=lambda x: (x[2], str(x[1]))):
             f.write(f"{st}\t{s.get('key')}\t{s.get('name')}\t{h}\n")
     print("剔除清单 dropped_sites.txt")
