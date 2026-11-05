@@ -9,27 +9,27 @@ TVBox / FongMi 影视 / OK影视 的配置源。**每天北京时间 05:17 由 G
 ### 主地址（单仓，推荐）
 
 ```
-https://gh-proxy.com/https://raw.githubusercontent.com/chenqq2026/Tvbox-public/main/config_all.json
+https://ghfast.top/https://raw.githubusercontent.com/chenqq2026/Tvbox-public/main/config_all.json
 ```
 
 ### 备用加速通道（内容完全相同，只换开头域名）
 
-`gh-proxy.com` 抽风时，把地址开头的 `https://gh-proxy.com/` 换成下表任意一个，
+`ghfast.top` 抽风时，把地址开头的 `https://ghfast.top/` 换成下表任意一个，
 **后面整段路径一个字都不要改**：
 
 | 通道 | 主配置 | 备用聚合 | 直播 m3u | jar | 备注 |
 |---|---|---|---|---|---|
-| `gh-proxy.com` | 🟢 3.0s | 🟢 2.6s | 🟢 3.9s | 🟢 19.3s | 首选 |
-| `ghproxy.net` | 🟢 3.0s | 🟢 2.0s | 🟢 5.8s | 🟡 170s | 次选，拉 jar 慢 |
-| `ghfast.top` | 🟢 7.0s | 🟢 3.0s | 🟢 2.3s | 🟢 5.2s | jar 最快 |
-| `ghproxy.cc` | 🟢 3.1s | 🟢 4.5s | 🟢 5.8s | 🟢 13.3s | 备选 |
+| `ghfast.top` | 🟢 1.0s | 🟢 3.0s | 🟢 2.3s | 🟢 1.9s | **首选**，jar 最快 |
+| `gh-proxy.com` | 🟢 0.8s | 🟢 2.6s | 🟢 3.9s | 🟢 3.2s | 次选，与首选基本持平 |
+| `ghproxy.cc` | 🟢 2.6s | 🟢 4.5s | 🟢 5.8s | 🟢 4.1s | 备选 |
+| `ghproxy.net` | 🟢 1.3s | 🟢 2.0s | 🟢 5.8s | 🟡 59.4s | 拉配置行，拉 jar 很慢 |
 | `cdn.jsdelivr.net/gh/chenqq2026/Tvbox-public@main/` | 🟢 2.4s | 🟢 3.0s | 🔴 超时 | 🔴 失败 | 最后备选，见下方警告 |
 
-以 `ghfast.top` 为例：
+以 `gh-proxy.com` 为例（备用聚合同理）：
 
 ```
-https://ghfast.top/https://raw.githubusercontent.com/chenqq2026/Tvbox-public/main/config_all.json
-https://ghfast.top/https://raw.githubusercontent.com/chenqq2026/Tvbox-public/main/spare_juhe.json
+https://gh-proxy.com/https://raw.githubusercontent.com/chenqq2026/Tvbox-public/main/config_all.json
+https://gh-proxy.com/https://raw.githubusercontent.com/chenqq2026/Tvbox-public/main/spare_juhe.json
 ```
 
 > ⚠️ **jsDelivr 只适合应急**：① 路径格式不同，是 `cdn.jsdelivr.net/gh/用户/仓库@main/文件`，
@@ -37,7 +37,10 @@ https://ghfast.top/https://raw.githubusercontent.com/chenqq2026/Tvbox-public/mai
 > ③ CDN 缓存 12 小时 + 客户端缓存 7 天，配置每天更新，用它会出现「明明更新了盒子上还是旧的」，
 > 很容易误判成自动更新失效。
 
-> 实测时间 2026-11-04 13:05，数值仅代表当时网络，只作相对参考。
+> 实测时间 2026-11-05 11:24（11-04 也测过一轮）。这类公益代理负载波动大，
+> 前一天 ghfast.top 拉主配置还要 7.0s，今天就降到 1.0s——数值只作相对参考，
+> 排名也会轮换。真正影响体验的是 jar 下载速度（TVBox 启动/更新时拉 1.84MB），
+> 哪个通道 jar 快就用哪个当主。
 
 ---
 
