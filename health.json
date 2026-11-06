@@ -1,5 +1,5 @@
 {
-  "updated": "2026-11-06 16:34:59",
+  "updated": "2026-11-06 17:19:58",
   "jar": {
     "md5": "96ae86a8139a92009c4d83d1c6d7fac1",
     "size_mb": 1.84,
@@ -22,14 +22,14 @@
     "computed_lines": 473,
     "stale": false,
     "channels": 332,
-    "measured_now": 285,
-    "inherited_kbps": 9,
-    "carry_alive": 6,
+    "measured_now": 264,
+    "inherited_kbps": 31,
+    "carry_alive": 10,
     "carry_gone": 70,
     "carry_kept": 76,
     "carry_expired": 0,
-    "median_kbps": 1356,
-    "p10_kbps": 450,
+    "median_kbps": 1430,
+    "p10_kbps": 386,
     "slow_tagged": 49
   },
   "epg": "https://epg.cdn.loc.cc/?ch={name}&date={date}",
@@ -54,18 +54,16 @@
   },
   "lite": {
     "enabled": true,
-    "probed_at": "2026-11-06 16:22:23",
-    "evidence_age_days": 0.01,
+    "probed_at": "2026-11-06 17:20:21",
+    "evidence_age_days": 0.0,
     "passed": true,
     "probe_sites": 18,
     "keep_sites": 10,
     "keep_parses": 9,
     "zero_hit_sites": [
-      "影视 • 非凡[直连]",
       "影视 • 天涯",
-      "影视 • 卧龙资源[直连]",
       "🐉┃索尼┃高清·ok线路1",
-      "影视 • 尤酷[直连]",
+      "影视 • 卧龙资源[直连]",
       "影视 • 金蝉",
       "影视 • 小绵阳",
       "百度"
@@ -91,8 +89,18 @@
       "山海情": 10
     },
     "config_ok": true,
-    "rebuilt_at": "2026-11-06 16:34:59",
+    "rebuilt_at": "2026-11-06 17:20:21",
     "config_sites": 10,
-    "config_parses": 9
+    "config_parses": 9,
+    "auto": {
+      "source": "ci-auto（GitHub Actions 海外机房）",
+      "local_baseline_at": "2026-11-06 16:22:23",
+      "local_fresh": true,
+      "locked_out": 8,
+      "ci_extra_keep_blocked": 2,
+      "events_today": 0,
+      "keep_sites": 10,
+      "keep_parses": 9
+    }
   }
 }
