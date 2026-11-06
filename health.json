@@ -1,7 +1,7 @@
 {
-  "updated": "2026-11-06 01:36:01",
+  "updated": "2026-11-06 06:34:17",
   "jar": {
-    "md5": "356ad46efe5d2b44a9cb4a6deb9ef0df",
+    "md5": "96ae86a8139a92009c4d83d1c6d7fac1",
     "size_mb": 1.84,
     "declared_match": true,
     "changed": true
@@ -18,15 +18,19 @@
     "tested": 25
   },
   "live": {
-    "lines": 450,
-    "computed_lines": 450,
+    "lines": 471,
+    "computed_lines": 471,
     "stale": false,
-    "channels": 322,
-    "measured_now": 58,
-    "inherited_kbps": 3,
+    "channels": 330,
+    "measured_now": 245,
+    "inherited_kbps": 34,
+    "carry_alive": 16,
+    "carry_gone": 75,
+    "carry_kept": 78,
+    "carry_expired": 0,
     "median_kbps": 1278,
-    "p10_kbps": 355,
-    "slow_tagged": 50
+    "p10_kbps": 322,
+    "slow_tagged": 57
   },
   "epg": "https://epg.cdn.loc.cc/?ch={name}&date={date}",
   "spare": {
