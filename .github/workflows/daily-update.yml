@@ -26,6 +26,12 @@ jobs:
       - name: 更新（qist快照 + jar镜像 + 直播验证测速 + 解析器实测）
         run: python scripts/update_daily.py
 
+      - name: 重建精简配置（只读本机证据，不做网络判定）
+        # CI 在海外机房，测国内采集站会系统性误判（直播线路误杀已验证过这个坑）。
+        # 这里只拿 7 天内有效的 lite_probe.json 从最新主配置派生 config_lite.json，
+        # 让精简版跟上每天的直播 / jar / EPG 更新；证据过期就保留旧文件。
+        run: python scripts/build_lite.py --rebuild
+
       - name: 写入运行摘要
         if: always()
         run: |
@@ -48,6 +54,8 @@ jobs:
           # 所以这里用变量收集、文件存在才追加。
           FILES="jsm_fixed.json live_verified.m3u live_miss.json config_all.json live_speed.json health.json jar/spider.jar spare_juhe.json jar/spare_spider.jar vod_cdn_report.json"
           if [ -f vod_fast_sites.json ]; then FILES="$FILES vod_fast_sites.json"; fi
+          if [ -f config_lite.json ]; then FILES="$FILES config_lite.json"; fi
+          if [ -f lite_probe.json ]; then FILES="$FILES lite_probe.json"; fi
           if git diff --quiet -- $FILES; then
             echo "内容无变化，跳过提交"
           else

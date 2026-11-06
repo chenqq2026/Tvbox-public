@@ -784,6 +784,33 @@ except FileNotFoundError:
 except Exception as e:
     vod_cdn = {"probed": False, "error": f"{type(e).__name__}: {e}"}
 
+# 精简版 config_lite.json：证据只由本机 scripts/build_lite.py 生成。
+# CI 绝不重跑关键词搜索实测——海外机房测国内采集站会系统性误判，
+# 直播线路误杀（347→332→322）就是这个坑。这里只转述证据，
+# 随后的 build_lite.py --rebuild 会回填 rebuilt_at / config_* 字段。
+lite = {"enabled": False}
+try:
+    e = json.load(open("lite_probe.json", encoding="utf-8"))
+    _n8 = dt.datetime.now(dt.timezone.utc).replace(tzinfo=None) + dt.timedelta(hours=8)
+    _age = (_n8 - dt.datetime.strptime(e["probed_at"], "%Y-%m-%d %H:%M:%S")).total_seconds() / 86400
+    lite = {
+        "enabled": True,
+        "probed_at": e.get("probed_at"),
+        "evidence_age_days": round(_age, 2),
+        "passed": e.get("passed"),
+        "probe_sites": len(e.get("site_rows") or []),
+        "keep_sites": len(e.get("keep_sites") or []),
+        "keep_parses": len(e.get("keep_parses") or []),
+        "zero_hit_sites": e.get("zero_hit_sites") or [],
+        "keyword_stations": e.get("keyword_stations") or {},
+        "holdout_stations": e.get("holdout_stations") or {},
+        "config_ok": False,
+    }
+except FileNotFoundError:
+    pass
+except Exception as e:
+    lite = {"enabled": False, "error": f"{type(e).__name__}: {e}"}
+
 health = {
     "updated": (dt.datetime.now(dt.timezone.utc).replace(tzinfo=None)
                 + dt.timedelta(hours=8)).strftime("%Y-%m-%d %H:%M:%S"),
@@ -815,6 +842,7 @@ health = {
     "epg": epg_url or "无可用源",
     "spare": spare_stat,
     "vod_cdn": vod_cdn,
+    "lite": lite,
 }
 json.dump(health, open("health.json", "w", encoding="utf-8", newline="\n"),
           ensure_ascii=False, indent=2)
