@@ -1,5 +1,5 @@
 {
-  "updated": "2026-11-06 06:46:02",
+  "updated": "2026-11-06 16:02:11",
   "jar": {
     "md5": "96ae86a8139a92009c4d83d1c6d7fac1",
     "size_mb": 1.84,
@@ -21,16 +21,16 @@
     "lines": 473,
     "computed_lines": 473,
     "stale": false,
-    "channels": 331,
-    "measured_now": 255,
-    "inherited_kbps": 32,
-    "carry_alive": 6,
+    "channels": 333,
+    "measured_now": 259,
+    "inherited_kbps": 34,
+    "carry_alive": 5,
     "carry_gone": 70,
-    "carry_kept": 74,
+    "carry_kept": 75,
     "carry_expired": 0,
-    "median_kbps": 1382,
-    "p10_kbps": 419,
-    "slow_tagged": 46
+    "median_kbps": 1239,
+    "p10_kbps": 412,
+    "slow_tagged": 50
   },
   "epg": "https://epg.cdn.loc.cc/?ch={name}&date={date}",
   "spare": {
@@ -39,5 +39,17 @@
     "lives": 17,
     "jar_mirrored": true,
     "jar_reused": false
+  },
+  "vod_cdn": {
+    "probed": true,
+    "probed_at": "2026-11-06 15:34:46 (UTC+8)",
+    "passed": false,
+    "new_hosts": 2,
+    "new_vs_known_hosts": 0,
+    "baseline_median_kbps": 1474,
+    "round1_median_kbps": 1484,
+    "round2_median_kbps": 634,
+    "top2_host_share": 0.276,
+    "fast_sites_active": 0
   }
 }
