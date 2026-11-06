@@ -344,9 +344,25 @@ if restored:
     print(f"关键频道兜底补入: {restored}")
 
 
-# 上游会周期性精简（实测 vbskycn 从 404 频道降到 300），撤掉的不等于死掉。
-# 把上一版 m3u 里「上游已不再提供、但此刻仍能播」的线路复验一遍留下来，
-# 频道数就不会因为上游瘦身而莫名少一大截（实测 432 → 327）。
+# 旧线路继承：修 2026-11-06 发现的「慢性误杀」。
+#
+# 现象：线上频道数连续三天单调下滑 347→332→322，本机（国内家宽）复验当天被剔除的
+# 14 个频道 14/14 全部可播、其中 13 个上游清单里仍然提供。根因是 CI 跑在海外机房，
+# 对国内地方台系统性不可达，而旧逻辑「复验补回」用的还是同一个 CI playable()——
+# 等于拿一把坏尺子量第二次，好线永远回不来。
+#
+# 现在的判据（分三级证据）：
+#   ① 上游当前清单里仍有这条 url → 直接继承。上游每天都在维护自己的清单，
+#      它留着就是最可靠的存活信号，不再要求 CI 复验通过。
+#   ② 上游已撤，但曾经实测下载过分片（live_speed 里 kbps>0）→ 同样保留。
+#      「真下过视频数据」是比 CI 一次超时强得多的证据；本机实测 75 条上游已撤
+#      的旧线路里 74 条仍可播，若按 CI 复验判死会连带误杀。
+#   ③ 上游已撤、又从没测出过速度 → 复验 + 30 天宽限，只淘汰这类毫无证据的死链。
+# 这样淘汰只发生在「上游撤了且从未验证过」的线路上，好线不会慢性流失。
+MISS_FILE = "live_miss.json"
+GRACE_GONE = 30         # 第③类最多再留 30 天
+
+
 def clean_name(n):
     return re.sub(r"（慢）$", "", re.sub(r"▪\d+$", "", n)).strip()
 
@@ -356,24 +372,62 @@ try:
 except FileNotFoundError:
     old_m3u = []
 new_urls = {u for _c, u, _k in final}
+upstream_urls = {u for _c, u in uniq}
+verified_urls = {u for _c, u in verified}
 carry = [(clean_name(c), u) for c, u in old_m3u
          if u not in new_urls and clean_name(c)]
-if carry:
+alive_carry = [(c, u) for c, u in carry if u in upstream_urls]
+gone_carry = [(c, u) for c, u in carry if u not in upstream_urls]
+
+# 只有上游已撤的才需要复验
+gone_ok = set()
+if gone_carry:
     with cf.ThreadPoolExecutor(10) as ex:
-        carry_ok = [((c, u), ok) for (c, u), ok in
-                    zip(carry, ex.map(lambda p: playable(p[1], attempt=1), carry)) if ok]
-    cnt = {}
-    for c, _u, _k in final:
-        cnt[c.replace(" ", "")] = cnt.get(c.replace(" ", ""), 0) + 1
-    kept_carry = 0
-    for (c, u) in [p for p, ok in carry_ok]:
-        key = c.replace(" ", "")
-        lim = 3 if (re.match(r"^CCTV\d+\+?$", key) or "卫视" in key) else 2
-        if cnt.get(key, 0) < lim:
-            final.append((c, u, prev_speed.get(u, 0)))
-            cnt[key] = cnt.get(key, 0) + 1
-            kept_carry += 1
-    print(f"上游已撤但复验可播 {len(carry_ok)}/{len(carry)} 条 → 补回 {kept_carry} 条")
+        for (_c, u), ok in zip(gone_carry,
+                               ex.map(lambda p: playable(p[1], attempt=1), gone_carry)):
+            if ok:
+                gone_ok.add(u)
+
+# 宽限计数：只累计「上游已撤 + 复验没过 + 从没测出过速度」的 url；
+# 重新出现在上游、本轮验证通过、复验通过、或历史实测过，一律清零。
+try:
+    miss = json.load(open(MISS_FILE, encoding="utf-8"))
+    if not isinstance(miss, dict):
+        miss = {}
+except Exception:
+    miss = {}
+new_miss = {}
+for u in set(miss) | {u for _c, u in gone_carry}:
+    if (u in upstream_urls or u in verified_urls or u in gone_ok
+            or u in new_urls or prev_speed.get(u, 0) > 0):
+        continue
+    new_miss[u] = int(miss.get(u, 0)) + 1
+json.dump(new_miss, open(MISS_FILE, "w", encoding="utf-8", newline="\n"),
+          ensure_ascii=False, separators=(",", ":"))
+
+strong = [(c, u) for c, u in gone_carry
+          if u not in gone_ok and prev_speed.get(u, 0) > 0]
+graced = [(c, u) for c, u in gone_carry
+          if u in gone_ok or prev_speed.get(u, 0) > 0
+          or new_miss.get(u, 0) <= GRACE_GONE]
+keep_carry = alive_carry + graced
+carry_expired = len(carry) - len(keep_carry)
+
+cnt = {}
+for c, _u, _k in final:
+    cnt[c.replace(" ", "")] = cnt.get(c.replace(" ", ""), 0) + 1
+kept_carry = 0
+for c, u in keep_carry:
+    key = c.replace(" ", "")
+    lim = 3 if (re.match(r"^CCTV\d+\+?$", key) or "卫视" in key) else 2
+    if cnt.get(key, 0) < lim:
+        final.append((c, u, speed.get(u, prev_speed.get(u, 0))))
+        cnt[key] = cnt.get(key, 0) + 1
+        kept_carry += 1
+print(f"旧线路继承：上游仍在 {len(alive_carry)} 条直接保留 / 上游已撤 {len(gone_carry)} 条"
+      f"（复验通过 {len(gone_ok)}、历史实测 {len(strong)}、"
+      f"宽限内 {len(graced) - len(gone_ok) - len(strong)}）→ "
+      f"补回 {kept_carry} 条，超期剔除 {carry_expired} 条")
 
 # 保险：只有「来源不可信」时才拦下本次结果。
 # 早期版本用「比上次少 20% 就保留旧文件」，结果上游真的精简频道时（实测 404→300 频道）
@@ -695,6 +749,10 @@ health = {
         "channels": len({c.replace(" ", "") for c, _u, _k in final}),
         "measured_now": measured,
         "inherited_kbps": inherited,
+        "carry_alive": len(alive_carry),       # 上游仍在提供、直接继承的旧线路
+        "carry_gone": len(gone_carry),         # 上游已撤、走复验+宽限的旧线路
+        "carry_kept": kept_carry,
+        "carry_expired": carry_expired,
         "median_kbps": _kb[len(_kb) // 2] if _kb else 0,
         "p10_kbps": _kb[len(_kb) // 10] if _kb else 0,
         "slow_tagged": sum(1 for _c, _u, k in final if 0 < k < 500),
