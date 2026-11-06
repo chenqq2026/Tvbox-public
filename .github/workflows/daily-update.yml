@@ -43,10 +43,15 @@ jobs:
         run: |
           git config user.name "chenqq2026"
           git config user.email "chenqq2026@users.noreply.github.com"
-          if git diff --quiet -- jsm_fixed.json live_verified.m3u live_miss.json config_all.json live_speed.json health.json jar/spider.jar spare_juhe.json jar/spare_spider.jar vod_cdn_report.json vod_fast_sites.json; then
+          # vod_fast_sites.json 只在 expand_cdn.py 门槛全过时由本机生成，平时不存在。
+          # git add 一个不存在的 pathspec 会 fatal 退出 128（run #11 就是这么挂的），
+          # 所以这里用变量收集、文件存在才追加。
+          FILES="jsm_fixed.json live_verified.m3u live_miss.json config_all.json live_speed.json health.json jar/spider.jar spare_juhe.json jar/spare_spider.jar vod_cdn_report.json"
+          if [ -f vod_fast_sites.json ]; then FILES="$FILES vod_fast_sites.json"; fi
+          if git diff --quiet -- $FILES; then
             echo "内容无变化，跳过提交"
           else
-            git add jsm_fixed.json live_verified.m3u live_miss.json config_all.json live_speed.json health.json jar/spider.jar spare_juhe.json jar/spare_spider.jar vod_cdn_report.json vod_fast_sites.json
+            git add $FILES
             git commit -m "auto update: 源/直播/解析器 $(date -u +%Y%m%d%H%M)"
             git push
           fi
