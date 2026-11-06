@@ -19,6 +19,12 @@ ps = h["parses"]
 print(f"| 解析器 | {ps['alive']}/{ps['total']} 实测可用 |")
 lv = h["live"]
 print(f"| 直播 | {lv['channels']} 频道 / {lv['lines']} 线路，带宽中位 {lv['median_kbps']} kbps，慢线标记 {lv['slow_tagged']} |")
+vc = h.get("vod_cdn") or {}
+if vc.get("probed"):
+    share = vc.get("top2_host_share") or 0
+    verdict = "达标" if vc.get("passed") else "未达标(零写入)"
+    print(f"| 点播 CDN | 基线 {vc.get('baseline_median_kbps')} kbps / 前2主域占比 {share:.0%} / "
+          f"新源探测 {verdict}（新主域 {vc.get('new_hosts')} 个）/ 加速站生效 {vc.get('fast_sites_active')} |")
 print(f"| EPG | {h['epg']} |")
 print("")
 print(f"更新时间（UTC+8）：{h['updated']}")

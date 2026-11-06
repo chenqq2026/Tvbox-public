@@ -5,6 +5,7 @@
 仅当内容变化时才写文件（配合 workflow 的 git diff 判断是否提交）。
 """
 import concurrent.futures as cf
+import datetime as dt
 import hashlib
 import json
 import os
@@ -603,6 +604,34 @@ for s in jsm.get("sites", []):
     used_keys.add(k)
     merged_sites.append(s)
 
+# 4a-2. 多 CDN 加速站：由 scripts/expand_cdn.py 在「本机国内网络」验证通过后写入。
+# CI 绝不跑带宽判定——海外机房测国内采集 CDN 会系统性偏低，直播线路误杀已经
+# 验证过这个坑。这里只读取已验证结果，且 7 天内复核过才合入，否则主配置保持原样。
+fast_active = 0
+try:
+    fast = json.load(open("vod_fast_sites.json", encoding="utf-8"))
+    if fast.get("passed") is True and fast.get("sites"):
+        now8 = dt.datetime.now(dt.timezone.utc).replace(tzinfo=None) + dt.timedelta(hours=8)
+        age = (now8 - dt.datetime.strptime(fast["verified_at"], "%Y-%m-%d %H:%M:%S")).total_seconds()
+        if -3600 <= age <= 7 * 86400:
+            pref = []
+            for s in fast["sites"]:
+                s = dict(s)
+                k = str(s.get("key") or "")
+                if k in used_keys:
+                    continue
+                used_keys.add(k)
+                pref.append(s)
+            merged_sites = pref + merged_sites
+            fast_active = len(pref)
+            print(f"  多CDN加速站合入 {fast_active} 个（{fast['verified_at']} 本机验证）")
+        else:
+            print(f"  多CDN加速站已过期({age/86400:.1f}天)，忽略；需重跑 expand_cdn.py")
+except FileNotFoundError:
+    pass
+except Exception as e:
+    print(f"  多CDN加速站读取失败，忽略：{e}")
+
 # 解析器合并：去重 + 实测可用的排前（自持优先）
 merged_parses, parse_stat = build_parses(direct_parses + jsm.get("parses", []))
 
@@ -730,8 +759,34 @@ except Exception as e:
 # ---------- 5. health.json 健康快照 ----------
 print("== 5. 健康快照 ==")
 _kb = sorted([k for _c, _u, k in final if k > 0])
+
+# 点播 CDN 诊断：数据来自本机国内网络跑 expand_cdn.py 的报告，CI 只负责转述。
+# updated 统一用 UTC+8（CI 机器是 UTC，旧版 time.strftime 写的是 UTC 却被
+# summary.py 标成 UTC+8，口径不一致，这里一并修正）。
+vod_cdn = {"probed": False}
+try:
+    r = json.load(open("vod_cdn_report.json", encoding="utf-8"))
+    b = r.get("baseline", {})
+    vod_cdn = {
+        "probed": True,
+        "probed_at": r.get("probed_at"),
+        "passed": r.get("passed"),
+        "new_hosts": len(r.get("new_hosts", [])),
+        "new_vs_known_hosts": len(r.get("new_vs_known_hosts", [])),
+        "baseline_median_kbps": b.get("median_kbps"),
+        "round1_median_kbps": r.get("round1", {}).get("median_kbps"),
+        "round2_median_kbps": r.get("round2", {}).get("median_kbps"),
+        "top2_host_share": round(b.get("top2_share", 0), 3),
+        "fast_sites_active": fast_active,
+    }
+except FileNotFoundError:
+    pass
+except Exception as e:
+    vod_cdn = {"probed": False, "error": f"{type(e).__name__}: {e}"}
+
 health = {
-    "updated": time.strftime("%Y-%m-%d %H:%M:%S"),
+    "updated": (dt.datetime.now(dt.timezone.utc).replace(tzinfo=None)
+                + dt.timedelta(hours=8)).strftime("%Y-%m-%d %H:%M:%S"),
     "jar": {"md5": md5, "size_mb": round(len(jar) / 1048576, 2),
             "declared_match": declared_md5 == md5, "changed": jar_changed},
     "sites": {
@@ -759,6 +814,7 @@ health = {
     },
     "epg": epg_url or "无可用源",
     "spare": spare_stat,
+    "vod_cdn": vod_cdn,
 }
 json.dump(health, open("health.json", "w", encoding="utf-8", newline="\n"),
           ensure_ascii=False, indent=2)

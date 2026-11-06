@@ -1,0 +1,81 @@
+{
+  "probed_at": "2026-11-06 15:34:46 (UTC+8)",
+  "network": "本机国内网络；CI 海外机房不可用于带宽判定",
+  "baseline": {
+    "median_kbps": 1474,
+    "samples": 15,
+    "hosts": [
+      "baofeng9.com",
+      "dytt-see.com",
+      "hhuus.com",
+      "huyall.com",
+      "jisuzyv.com",
+      "lzcdn27.com",
+      "maowushi.com",
+      "rstu6.com",
+      "taopianplay1.com",
+      "tpvod.com",
+      "tyyszywvod2.com"
+    ],
+    "host_distribution": {
+      "lzcdn27.com": 16,
+      "baofeng9.com": 8,
+      "hhuus.com": 8,
+      "tyyszywvod2.com": 8,
+      "huyall.com": 8,
+      "jisuzyv.com": 8,
+      "dytt-see.com": 8,
+      "maowushi.com": 8,
+      "rstu6.com": 7,
+      "taopianplay1.com": 5
+    },
+    "top2_share": 0.27586206896551724
+  },
+  "upstreams": [
+    "本仓镜像spare",
+    "王二小",
+    "小马",
+    "小盒子",
+    "Lightconer单仓",
+    "rtian001单仓"
+  ],
+  "candidate_cms": 31,
+  "new_hosts": [
+    "bfvvs.com",
+    "xluuss.com"
+  ],
+  "new_vs_known_hosts": [],
+  "known_hosts_total": 14,
+  "baseline_note": "动态基线随当天片单抽样漂移；与 KNOWN_HOSTS 交叉核对，带宽门槛为与门硬约束，单项漂移不会导致误纳入",
+  "new_host_dns": {
+    "bfvvs.com": [],
+    "xluuss.com": []
+  },
+  "sample_lines": 6,
+  "round1": {
+    "median_kbps": 1484,
+    "ok": 6,
+    "per_host": {
+      "bfvvs.com": 785,
+      "xluuss.com": 1484
+    },
+    "max_kbps": 1547
+  },
+  "round2": {
+    "median_kbps": 634,
+    "ok": 6,
+    "per_host": {
+      "bfvvs.com": 634,
+      "xluuss.com": 558
+    },
+    "max_kbps": 1069
+  },
+  "checks": {
+    "新主域>=3且测通>=3": false,
+    "两轮中位均>=基线2倍": false,
+    "两轮结论一致(差<30%)": false,
+    "至少1条>=3000kbps": false
+  },
+  "passed": false,
+  "verdict": "未达标：新主域带宽与现有基线无显著差异，或解析不稳定；不引入任何站点"
+}
