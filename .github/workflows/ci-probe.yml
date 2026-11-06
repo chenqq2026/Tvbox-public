@@ -1,0 +1,43 @@
+# TEMP：只用于一次性探路「CI 海外机房能否做搜索实测」。
+# 门槛通过后会被删除，正式链路并入 daily-update.yml。
+name: ci-probe (TEMP)
+
+on:
+  workflow_dispatch: {}
+
+permissions:
+  contents: write
+
+jobs:
+  probe:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: CI 侧搜索实测探路（只诊断，不改配置）
+        run: python scripts/ci_probe.py
+
+      - name: 写入运行摘要
+        if: always()
+        run: |
+          if [ -f ci_probe_summary.md ]; then
+            cat ci_probe_summary.md >> "$GITHUB_STEP_SUMMARY"
+          fi
+
+      - name: 提交诊断结果
+        run: |
+          git config user.name "chenqq2026"
+          git config user.email "chenqq2026@users.noreply.github.com"
+          if [ -f ci_probe_result.json ]; then
+            git add ci_probe_result.json
+            if git diff --cached --quiet; then
+              echo "结果无变化，跳过提交"
+            else
+              git commit -m "probe(ci): 海外机房搜索实测可达性诊断"
+              git push
+            fi
+          fi
