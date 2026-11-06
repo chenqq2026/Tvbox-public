@@ -36,6 +36,12 @@ if lt.get("enabled"):
     print(f"| 精简版 | 证据 {age_txt} / 能出片站 {lt.get('keep_sites')}/{lt.get('probe_sites')} / "
           f"可用解析器 {lt.get('keep_parses')} / 0命中 {len(lt.get('zero_hit_sites') or [])} 个 / "
           f"{hold_txt} / 门槛 {verdict} / 今日重建={lt.get('config_ok', False)} |")
+    au = lt.get("auto") or {}
+    if au:
+        print(f"| 全自动 | 来源 {au.get('source')} / 本机基线 "
+              f"{'生效' if au.get('local_fresh') else '已过期·CI接管'} / "
+              f"锁定 {au.get('locked_out')} 站 / CI误纳拦截 {au.get('ci_extra_keep_blocked')} 个 / "
+              f"今日名单变化 {au.get('events_today')} 次 |")
 print(f"| EPG | {h['epg']} |")
 print("")
 print(f"更新时间（UTC+8）：{h['updated']}")

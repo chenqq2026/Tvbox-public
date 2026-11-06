@@ -11,23 +11,32 @@ config_lite.json 生成与维护（方案 A：精简版，可回滚）
 精简版只保留「实测能搜到片」的直连站 + 「实测可用」的解析器，
 直播 / EPG / spider jar / flags / doh / rules / ads 与主配置完全相同。
 
-两种模式
+几种模式
 --------
 probe   （默认，在本机国内网络跑）：真实关键词搜索实测 + 解析器实测，
         全部门槛通过才覆盖 config_lite.json；任一不过则**配置零写入**，保留旧版本。
-rebuild （CI 每天跑）：不做任何网络判定，只读取 7 天内有效证据，
-        从当天最新的 config_all.json 重建精简版，让它跟上每天的直播 / jar / EPG 更新。
+        本机结果是「硬基线」，优先级高于 CI。
+rebuild （兜底）：不做任何网络判定，只读取 7 天内有效证据，从当天最新的
+        config_all.json 重建精简版，让它跟上每天的直播 / jar / EPG 更新。
+auto    （CI 每天，见 scripts/lite_auto.py）：CI 实测 + 衰减演化 + 双源与门。
 
-为什么 CI 不跑 probe
---------------------
-Actions 在海外机房，测国内采集站会系统性误判。直播线路误杀已经踩过同一个坑：
-频道数 347→332→322，本机复验被剔除的 14 个台 14/14 全部能播。
-所以网络判定只在本机做，CI 只转述已验证证据；证据过期就保留旧配置，绝不重新判定。
+CI 侧判定的边界（2026-11-06 探路后修正）
+----------------------------------------
+原判断是「海外机房测国内采集站不可信」，探路（ci_probe_result.json）证明对
+**点播采集站 API** 这个判断是错的：CI 请求成功率 83.3%、TTFB 中位 233ms、
+本机 10 个活站召回 100%、零误杀。但方向相反的风险是真的——CI 会「误纳」：
+把本机 0/8 的「非凡」「尤酷」判成 8/8、7/8，海外可达 ≠ 用户家里能用。
+所以现在 CI 每天实测，但用双源与门：本机证据是硬基线，CI 只有权衰减淘汰，
+**无权自动加进本机判死的站**（locked_out）。
+
+注意这不推翻直播的结论：直播 IPTV 地方台受地域/运营商限制，CI 系统性不可达
+（频道 347→332→322，本机复验 14/14 可播）。点播是公网 CDN，两者性质不同。
 
 用法
 ----
-    python scripts/build_lite.py              # 本机：实测 + 生成
-    python scripts/build_lite.py --rebuild   # CI：只重建，不联网判定
+    python scripts/build_lite.py              # 本机：权威实测 + 生成
+    python scripts/build_lite.py --rebuild   # 兜底：只重建，不联网判定
+    python scripts/lite_auto.py              # CI 每天：全自动衰减维护
 """
 import argparse
 import concurrent.futures as cf
@@ -386,7 +395,7 @@ def do_probe(cfg):
 
     ev = {
         "probed_at": stamp(),
-        "source": "本机国内网络（CI 不跑探测）",
+        "source": "本机国内网络（权威基线）",
         "keywords": KW,
         "min_hit": MIN_HIT,
         "passed": passed,

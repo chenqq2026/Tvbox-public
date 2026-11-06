@@ -26,11 +26,12 @@ jobs:
       - name: 更新（qist快照 + jar镜像 + 直播验证测速 + 解析器实测）
         run: python scripts/update_daily.py
 
-      - name: 重建精简配置（只读本机证据，不做网络判定）
-        # CI 在海外机房，测国内采集站会系统性误判（直播线路误杀已验证过这个坑）。
-        # 这里只拿 7 天内有效的 lite_probe.json 从最新主配置派生 config_lite.json，
-        # 让精简版跟上每天的直播 / jar / EPG 更新；证据过期就保留旧文件。
-        run: python scripts/build_lite.py --rebuild
+      - name: 精简版全自动维护（CI 实测 + 双源与门衰减）
+        # 探路证明 CI 对点播采集站 API 可达（83.3% 成功率 / 活站召回 100%），
+        # 但会把本机不可用的站判活（误纳）。所以这里每天实测，只做衰减淘汰：
+        # 本机证据是硬基线，locked_out 永不自动加回；整体异常或门槛不过则零写入。
+        # 直播 IPTV 地方台是另一回事（地域限制，CI 不可达），两条链路判定不同。
+        run: python scripts/lite_auto.py
 
       - name: 写入运行摘要
         if: always()
@@ -56,6 +57,7 @@ jobs:
           if [ -f vod_fast_sites.json ]; then FILES="$FILES vod_fast_sites.json"; fi
           if [ -f config_lite.json ]; then FILES="$FILES config_lite.json"; fi
           if [ -f lite_probe.json ]; then FILES="$FILES lite_probe.json"; fi
+          if [ -f lite_state.json ]; then FILES="$FILES lite_state.json"; fi
           if git diff --quiet -- $FILES; then
             echo "内容无变化，跳过提交"
           else
