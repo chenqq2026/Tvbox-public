@@ -1,5 +1,5 @@
 {
-  "updated": "2026-11-06 17:19:58",
+  "updated": "2026-11-07 09:03:12",
   "jar": {
     "md5": "96ae86a8139a92009c4d83d1c6d7fac1",
     "size_mb": 1.84,
@@ -18,19 +18,19 @@
     "tested": 25
   },
   "live": {
-    "lines": 473,
-    "computed_lines": 473,
+    "lines": 483,
+    "computed_lines": 483,
     "stale": false,
-    "channels": 332,
-    "measured_now": 264,
-    "inherited_kbps": 31,
-    "carry_alive": 10,
-    "carry_gone": 70,
-    "carry_kept": 76,
+    "channels": 335,
+    "measured_now": 195,
+    "inherited_kbps": 39,
+    "carry_alive": 5,
+    "carry_gone": 140,
+    "carry_kept": 122,
     "carry_expired": 0,
-    "median_kbps": 1430,
-    "p10_kbps": 386,
-    "slow_tagged": 49
+    "median_kbps": 1514,
+    "p10_kbps": 445,
+    "slow_tagged": 44
   },
   "epg": "https://epg.cdn.loc.cc/?ch={name}&date={date}",
   "spare": {
@@ -54,7 +54,7 @@
   },
   "lite": {
     "enabled": true,
-    "probed_at": "2026-11-06 17:20:21",
+    "probed_at": "2026-11-07 09:03:33",
     "evidence_age_days": 0.0,
     "passed": true,
     "probe_sites": 18,
@@ -89,7 +89,7 @@
       "山海情": 10
     },
     "config_ok": true,
-    "rebuilt_at": "2026-11-06 17:20:21",
+    "rebuilt_at": "2026-11-07 09:03:33",
     "config_sites": 10,
     "config_parses": 9,
     "auto": {
