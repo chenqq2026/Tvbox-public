@@ -20,6 +20,7 @@ import os
 import re
 import socket
 import sys
+import time
 import urllib.parse
 import urllib.request  # get() 依赖；缺失时 js 规则全部下载失败，295 站退化成「无法判定主域名」
 
@@ -51,15 +52,41 @@ def get(url, timeout=20, n=400000):
         return r.read(n)
 
 
+# js 规则缓存：actions/cache 按「月份 + verified_config.json hash」跨周复用。
+# 旧版只看文件大小 >50 字节就命中，网关 404 页 / 错误 HTML 会被永久缓存，
+# 反而让「主域名提取」静默退化。这里补 TTL 兜底 + 内容校验 + 命中统计留痕。
+CACHE_TTL_DAYS = 45
+CACHE_STATS = {"hit": 0, "miss": 0, "refreshed": 0, "fail": 0, "rejected": 0}
+
+
+def looks_like_js(b):
+    if len(b) <= 50:
+        return False
+    head = b[:512].lstrip().lower()
+    return not (head.startswith(b"<!doctype") or head.startswith(b"<html")
+                or b"<head" in head or b"404: not found" in head)
+
+
 def js_local(url):
     fn = "cache_js/" + hashlib.md5(url.encode()).hexdigest() + ".js"
+    stale = False
     if os.path.exists(fn) and os.path.getsize(fn) > 50:
-        return open(fn, encoding="utf-8", errors="ignore").read()
+        stale = (time.time() - os.path.getmtime(fn)) > CACHE_TTL_DAYS * 86400
+        if not stale:
+            CACHE_STATS["hit"] += 1
+            return open(fn, encoding="utf-8", errors="ignore").read()
+    CACHE_STATS["refreshed" if stale else "miss"] += 1
     try:
         b = get(url)
-        open(fn, "wb").write(b)
+        if not looks_like_js(b):
+            # 不落盘：下次运行还能重试，避免把错误页钉死在缓存里
+            CACHE_STATS["rejected"] += 1
+            return ""
+        with open(fn, "wb") as w:
+            w.write(b)
         return b.decode("utf-8", errors="ignore")
     except Exception:
+        CACHE_STATS["fail"] += 1
         return ""
 
 
@@ -131,6 +158,9 @@ with cf.ThreadPoolExecutor(12) as ex:
 hs = sorted({h for h in site_primary.values() if h})
 unknown = [k for k, v in site_primary.items() if not v]
 print(f"主域名 {len(hs)} 个 | 无法判定主域名 {len(unknown)} 站（保守保留）")
+print(f"js 规则缓存: 命中 {CACHE_STATS['hit']} / 新下载 {CACHE_STATS['miss']} / "
+      f"过期刷新 {CACHE_STATS['refreshed']} / 失败 {CACHE_STATS['fail']} / "
+      f"内容拒绝 {CACHE_STATS['rejected']}")
 
 
 def is_poison(ip):
@@ -309,6 +339,7 @@ if not (REPORT_ONLY or degraded or collapse or not EVIDENCE_OK):
         "prev_dropped": prev_dropped,
         "nxdomain": dead_nx,
         "poisoned": dead_po,
+        "js_cache": dict(CACHE_STATS),
         "source": "verified_config.json + config_lite.json(已验证直连活站)",
     }
     json.dump(report, open("prune_report.json", "w", encoding="utf-8", newline="\n"),

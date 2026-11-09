@@ -93,6 +93,8 @@ https://gh-proxy.com/https://raw.githubusercontent.com/chenqq2026/Tvbox-public/m
 每次全量重建都会从 `config_lite.json` 补回已实测能出片的直连活站并置顶，因为重建源
 `verified_config.json` 全是 type=3 的 js 站，天然不含 type=1 直连 CMS。留痕见 `prune_report.json`。
 
+**js 规则缓存**：298 个站共用约 220 份 js 规则，每周全量下载既慢，网络一抖动就会让主域名提取退化（剔除数从 50 掉到 2，触发零写入保护）。现在用 `actions/cache` 把 `cache_js/` 跨周复用，key = 运行系统 + 月份 + `verified_config.json` 的 hash：同月每周命中复用，每月首个运行生成新 key 并回写最新规则（至多陈旧 1 个月），重建源变化也让 key 失效。脚本侧另有三层兜底：命中文件超过 45 天强制刷新、下载内容疑似 404/HTML 时**不落盘**（下次还能重试，避免把错误页钉死）、命中/下载/失败数写入 `prune_report.json → js_cache` 便于跨周核对。本机实测命中 226/228，只发 2 次网络请求。
+
 **四道防抖保险**（防止一次网络抖动把成品写坏）：
 - 拿不到合法 jar（体积/ZIP 头/md5 校验不过）→ 直接中止，保留线上旧版本
 - **线路继承（三级证据，2026-11-06 重做）**：CI 跑在海外机房，对国内地方台系统性不可达——曾出现频道数连续三天 347→332→322，而本机复验被剔除的 14 个台 14/14 全部能播。旧逻辑拿同一个 CI 探测器去「复验」它自己判死的线路，等于用坏尺子量两次。现在：
@@ -132,7 +134,7 @@ https://gh-proxy.com/https://raw.githubusercontent.com/chenqq2026/Tvbox-public/m
 | `jsm_fixed.json` | qist 今日快照（spider 已绝对化） |
 | `jar/spider.jar` | spider 引擎镜像，配置里指向这里而不是 qist 上游 |
 | `dropped_sites.txt` | 每周剔站清单（站点 key / 名称 / 判定原因） |
-| `prune_report.json` | 每周巡检留痕：上次/本次站数、补回活站数与名单、剔除数、证据时间 |
+| `prune_report.json` | 每周巡检留痕：上次/本次站数、补回活站数与名单、剔除数、证据时间、`js_cache` 命中统计 |
 | `spare_juhe.json` | **备用聚合配置**（517 站），主配置出问题时临时顶替用，每天自动镜像 |
 | `jar/spare_spider.jar` | `spare_juhe.json` 专用的 spider 引擎（1MB），跟着备用配置一起更新 |
 | `vod_cdn_report.json` | 点播 CDN 诊断报告（本机国内网络实测），含基线带宽、主域集中度、两轮采样与门槛结论 |
