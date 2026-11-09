@@ -86,9 +86,12 @@ https://gh-proxy.com/https://raw.githubusercontent.com/chenqq2026/Tvbox-public/m
 8. **精简版全自动维护**：`lite_auto.py` 在 CI 每天实测 18 站 × 8 关键词 + 8 个留出集词 + 全部解析器 → 双源与门衰减演化名单（连续 3 天 0 命中才淘汰 / 连续 2 天达标才加回 / 本机判死站永不自动加回）→ 从最新主配置派生 `config_lite.json`。整体异常或任一门槛不过就**零写入**。不再需要手动刷新证据，也不会冻结
 9. **写 `health.json`** + 有变化才提交
 
-`.github/workflows/weekly-prune.yml`，每周一 05:47：对备用配置做站点健康巡检，
-用 DNS 判定识别「域名已不存在」和「被 DNS 污染」的站点。**默认只报告不写文件**——
-老 gao 配置里大量 `csp_` 内置源无法提取主域名，自动写入会把它退回未剔除版本。
+`.github/workflows/weekly-prune.yml`，每周一 05:47（实际常延迟到 09 点）：对备用配置做站点健康巡检，
+用 DNS 判定识别「域名已不存在」和「被 DNS 污染」的站点，并写回 `pruned_config.json`。
+**四重零写入保护**：保留数比上次多 >5%（自动退化）、剔除数不到上次一半（主域名提取失效）、
+精简版实测证据不可用、手动勾选 `report_only` 只体检 —— 任一触发即保留旧文件不覆盖。
+每次全量重建都会从 `config_lite.json` 补回已实测能出片的直连活站并置顶，因为重建源
+`verified_config.json` 全是 type=3 的 js 站，天然不含 type=1 直连 CMS。留痕见 `prune_report.json`。
 
 **四道防抖保险**（防止一次网络抖动把成品写坏）：
 - 拿不到合法 jar（体积/ZIP 头/md5 校验不过）→ 直接中止，保留线上旧版本
@@ -119,7 +122,7 @@ https://gh-proxy.com/https://raw.githubusercontent.com/chenqq2026/Tvbox-public/m
 | `scripts/build_lite.py` | 本机权威实测 + 门槛守门（默认 `probe`）；`--rebuild` 为不联网的兜底重建 |
 | `scripts/lite_auto.py` | **CI 每天跑**：实测 + 双源与门衰减 + 重建，零手动 |
 | `scripts/ci_probe.py` / `ci_probe_result.json` | 一次性探路诊断工具与结论（CI 海外机房可达性证据） |
-| `pruned_config.json` | 备用。老 gao 配置剔除死域名后的干净版（约 252 站） |
+| `pruned_config.json` | 备用。老 gao 配置剔除死域名后的干净版；**10 个实测能出片的直连站置顶**，其余为 js 站 |
 | `direct_cms.json` | 应急最小配置。只有 8 个直连 CMS + 直播，7.9KB，不依赖任何 spider |
 | `config.json` | 多仓入口（3 条线路）。**部分壳不支持，导入会提示解析失败** |
 | `live_verified.m3u` | 验证 + 测速后的直播清单，可单独给任何 IPTV 播放器用 |
@@ -129,6 +132,7 @@ https://gh-proxy.com/https://raw.githubusercontent.com/chenqq2026/Tvbox-public/m
 | `jsm_fixed.json` | qist 今日快照（spider 已绝对化） |
 | `jar/spider.jar` | spider 引擎镜像，配置里指向这里而不是 qist 上游 |
 | `dropped_sites.txt` | 每周剔站清单（站点 key / 名称 / 判定原因） |
+| `prune_report.json` | 每周巡检留痕：上次/本次站数、补回活站数与名单、剔除数、证据时间 |
 | `spare_juhe.json` | **备用聚合配置**（517 站），主配置出问题时临时顶替用，每天自动镜像 |
 | `jar/spare_spider.jar` | `spare_juhe.json` 专用的 spider 引擎（1MB），跟着备用配置一起更新 |
 | `vod_cdn_report.json` | 点播 CDN 诊断报告（本机国内网络实测），含基线带宽、主域集中度、两轮采样与门槛结论 |

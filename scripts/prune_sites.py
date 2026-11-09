@@ -12,6 +12,7 @@ HTTP 探测会把大量活站误判成死站；直连又完全不通。因此改
 输出 pruned_config.json
 """
 import concurrent.futures as cf
+import datetime as dt
 import hashlib
 import ipaddress
 import json
@@ -184,6 +185,43 @@ for s in kept:
     seen.add(k)
     final.append(s)
 
+# ---- 合并已验证的直连活站 ----
+# verified_config.json 里 298 个站全是 type=3 的 js/spider 站，天然不含 type=1 直连 CMS。
+# 精简版 config_lite.json 的 10 个站是本机 + CI 双源实测「能搜到片」的直连站，
+# 每次全量重建都会把它们冲掉，因此在这里按归一化键补回并置顶。
+# 这些站有实测证据，跳过 DNS 判定（海外机房 DNS 对国内采集域名会误判）。
+PROTECTED = []
+EVIDENCE_OK = False
+EVIDENCE_AT = None
+
+
+def norm_api(u):
+    q = urllib.parse.urlsplit(str(u or "").strip())
+    return (q.netloc.lower(), q.path.rstrip("/"))
+
+
+try:
+    ev = json.load(open("lite_probe.json", encoding="utf-8"))
+    lite = json.load(open("config_lite.json", encoding="utf-8"))
+    candidate = [s for s in lite.get("sites", [])
+                 if str(s.get("type")) == "1" and str(s.get("api") or "").startswith("http")]
+    if not ev.get("passed") or not candidate:
+        raise ValueError("精简版证据未达标或无可用直连站")
+    EVIDENCE_AT = ev.get("probed_at")
+    exist = {norm_api(s.get("api") or s.get("key")) for s in final}
+    for s in candidate:
+        k = norm_api(s.get("api"))
+        if not k[0] or k in exist:
+            continue
+        PROTECTED.append(s)
+        exist.add(k)
+    final = PROTECTED + final
+    EVIDENCE_OK = True
+    print(f"已验证直连活站: 补回 {len(PROTECTED)} 个（证据 passed=true, 来源 config_lite.json）")
+except Exception as ex:
+    print(f"警告: 直连活站证据不可用，跳过合并（{type(ex).__name__}: {ex}）；"
+          f"本次判定为异常，保留旧 pruned_config.json 不覆盖")
+
 LIVE_URL = GAO_PROXY + "https://raw.githubusercontent.com/chenqq2026/Tvbox-public/main/live_verified.m3u"
 EPG = "https://epg.cdn.loc.cc/?ch={name}&date={date}"
 LOGO = "https://logo.wyfc.qzz.io/{name}.png"
@@ -207,34 +245,50 @@ out = {
     "rules": cfg.get("rules", []),
     "ads": cfg.get("ads", []),
 }
-json.dump(out, open("pruned_config.json", "w", encoding="utf-8", newline="\n"),
-          ensure_ascii=False, separators=(",", ":"))
+# 这里绝不提前写文件。旧版本在此处无条件覆盖 pruned_config.json，
+# 导致后面的 --report 判断和「退化保护」读到的都是刚被自己改写的新文件，
+# 两道保护同时失效（2026-11-09 的 252→295 自动退化就是这么来的）。
 
 dead_nx = sum(1 for _, _, st in dropped if st == "NXDOMAIN")
 dead_po = sum(1 for _, _, st in dropped if st == "POISONED")
 print(f"保留 {len(final)} 站 | 剔除 {len(dropped)} 站 "
       f"(域名不存在 {dead_nx} + DNS污染 {dead_po})")
 
-# ---- 写入保护 ----
-# 老 gao 配置里大量站点是 csp_ 内置源（没有 js 规则、ext 也不是域名），
-# 这类站无法提取主域名，只能“保守保留”。一旦规则缓存缺失或上游改动，
-# 剔除数就会掉到个位数，把已经剔干净的配置“恢复”成未剔版本 —— 属于自动退化。
-# 因此：保留数明显多于上次时不覆盖；--report 模式下只报告。
+# ---- 写入保护（三重与门，任一触发即零写入）----
+# 1) 退化保护：老 gao 配置里大量 csp_ 内置源提取不到主域名，只能“保守保留”。
+#    规则缓存缺失或上游改动时剔除数会掉到个位数，把已剔干净的配置“恢复”成未剔版本。
+# 2) 证据保护：直连活站合并失败时宁可不写，也不能把上周补进去的活站冲掉。
+# 3) 报告模式：--report 只输出，不落盘。
+# 注意：prev_n 必须在任何写入之前读取（旧版本被提前覆盖，退化保护恒为假）。
 REPORT_ONLY = "--report" in sys.argv
 prev_n = 0
+prev_dropped = 0
 try:
     prev_n = len(json.load(open("pruned_config.json", encoding="utf-8"))["sites"])
 except Exception:
     pass
+try:
+    with open("dropped_sites.txt", encoding="utf-8") as f:
+        prev_dropped = sum(1 for line in f if line.strip())
+except Exception:
+    pass
 degraded = bool(prev_n) and len(final) > prev_n * 1.05
+# 规则缓存缺失时，js 站主域名全部提取不到 → 剔除数从几十掉到个位数，
+# 站点总数却只小幅上升，旧的「站点数 >5%」保护拦不住，必须单独判剔除数骤降。
+collapse = prev_dropped >= 10 and len(dropped) < prev_dropped * 0.5
 
 if degraded:
     print(f"警告：本次保留 {len(final)} 站 > 上次 {prev_n} 站 ×1.05，"
           f"判定为剔站失效（规则缓存缺失/上游改动），保留旧 pruned_config.json 不覆盖")
+if collapse:
+    print(f"警告：本次仅剔除 {len(dropped)} 站 < 上次 {prev_dropped} 站 ×0.5，"
+          f"判定为主域名提取退化，保留旧 pruned_config.json 不覆盖")
+if not EVIDENCE_OK:
+    print("警告：直连活站证据不可用，判定为异常，保留旧 pruned_config.json 不覆盖")
 if REPORT_ONLY:
-    print("报告模式：不写入 pruned_config.json / dropped_sites.txt")
+    print("报告模式：不写入 pruned_config.json / dropped_sites.txt / prune_report.json")
 
-if not (REPORT_ONLY or degraded):
+if not (REPORT_ONLY or degraded or collapse or not EVIDENCE_OK):
     json.dump(out, open("pruned_config.json", "w", encoding="utf-8", newline="\n"),
               ensure_ascii=False, separators=(",", ":"))
     print(f"pruned_config.json {os.path.getsize('pruned_config.json')/1024:.1f}KB")
@@ -242,3 +296,21 @@ if not (REPORT_ONLY or degraded):
         for s, h, st in sorted(dropped, key=lambda x: (x[2], str(x[1]))):
             f.write(f"{st}\t{s.get('key')}\t{s.get('name')}\t{h}\n")
     print("剔除清单 dropped_sites.txt")
+    stamp = (dt.datetime.now(dt.timezone.utc) + dt.timedelta(hours=8)).strftime("%Y-%m-%d %H:%M:%S")
+    report = {
+        "updated": stamp,
+        "prev_sites": prev_n,
+        "kept_sites": len(final),
+        "protected_merged": len(PROTECTED),
+        "protected_names": [s.get("name") for s in PROTECTED],
+        "evidence_probed_at": EVIDENCE_AT,
+        "dropped": len(dropped),
+        "prev_dropped": prev_dropped,
+        "nxdomain": dead_nx,
+        "poisoned": dead_po,
+        "source": "verified_config.json + config_lite.json(已验证直连活站)",
+    }
+    json.dump(report, open("prune_report.json", "w", encoding="utf-8", newline="\n"),
+              ensure_ascii=False, separators=(",", ":"))
+    print(f"留痕 prune_report.json | 上次 {prev_n} → 本次 {len(final)} 站 "
+          f"(补回活站 {len(PROTECTED)}, 剔除 {len(dropped)})")

@@ -1,19 +1,20 @@
 name: weekly-prune
 
-# 每周对备用配置做一次站点健康巡检。
-# 默认「只报告不改文件」：老 gao 配置里大量 csp_ 内置源无法提取主域名，
-# 一旦规则缓存缺失就会把已剔干净的 252 站“恢复”成 303 站（自动退化）。
-# 想真正写入时，手动 Run workflow 并把 report_only 保持 false 即可（脚本内置保护：
-# 保留数比上次多 5% 以上时仍会拒绝覆盖）。
+# 每周对备用配置做一次站点健康巡检，并把结果写回 pruned_config.json。
+# 定时（schedule）走写入模式；手动触发时把 report_only 勾 true 可只体检不落盘。
+# 脚本内置四重零写入保护：站点数退化（比上次多 >5%）、
+# 剔除数骤降（不到上次一半，说明主域名提取失效）、精简版实测证据不可用、--report 只输出。
+# 每次全量重建都会从 config_lite.json 补回已实测能出片的直连活站并置顶，
+# 因为重建源 verified_config.json 里全是 type=3 的 js 站，天然不含 type=1 直连 CMS。
 on:
   schedule:
     - cron: "47 21 * * 0" # 每周日 UTC 21:47 = 北京时间周一 05:47
   workflow_dispatch:
     inputs:
       report_only:
-        description: "只生成报告，不覆盖 pruned_config.json"
+        description: "只体检不写文件（定时运行默认 false = 正常剔站并更新备用配置）"
         type: boolean
-        default: true
+        default: false
 
 permissions:
   contents: write
@@ -34,10 +35,11 @@ jobs:
 
       - name: 按DNS判定站点存活
         run: |
-          if [ "${{ inputs.report_only }}" = "false" ]; then
-            python scripts/prune_sites.py
-          else
+          # schedule 触发时 inputs 为空 → 走 else（写入模式），与原实际行为一致
+          if [ "${{ inputs.report_only }}" = "true" ]; then
             python scripts/prune_sites.py --report
+          else
+            python scripts/prune_sites.py
           fi
 
       - name: 写入运行摘要
@@ -55,10 +57,15 @@ jobs:
         run: |
           git config user.name "chenqq2026"
           git config user.email "chenqq2026@users.noreply.github.com"
-          if git diff --quiet -- pruned_config.json dropped_sites.txt; then
+          FILES="pruned_config.json dropped_sites.txt"
+          if [ -f prune_report.json ]; then
+            git add -N prune_report.json
+            FILES="$FILES prune_report.json"
+          fi
+          if git diff --quiet -- $FILES; then
             echo "无变化，跳过提交"
           else
-            git add pruned_config.json dropped_sites.txt
+            git add $FILES
             git commit -m "auto prune: 剔除死站点 $(date -u +%Y%m%d)"
             git push
           fi
