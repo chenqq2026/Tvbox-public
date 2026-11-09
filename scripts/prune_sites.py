@@ -21,6 +21,7 @@ import re
 import socket
 import sys
 import urllib.parse
+import urllib.request  # get() 依赖；缺失时 js 规则全部下载失败，295 站退化成「无法判定主域名」
 
 GAO_PROXY = "https://gh-proxy.com/"
 SKIP = ("githubusercontent", "gh-proxy", "jsdelivr", "github.com", "gitee.com",
