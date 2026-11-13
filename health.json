@@ -1,36 +1,36 @@
 {
-  "updated": "2026-11-12 10:23:50",
+  "updated": "2026-11-13 09:58:35",
   "jar": {
-    "md5": "c25d34b0cfc044cd1ab3f225097ea7fd",
-    "size_mb": 1.83,
+    "md5": "a2928946eb00e5fee87663c94ae37bff",
+    "size_mb": 1.84,
     "declared_match": true,
     "changed": true
   },
   "sites": {
-    "total": 169,
+    "total": 170,
     "cms": 22,
-    "spider": 146,
+    "spider": 147,
     "cms_dead_today": []
   },
   "parses": {
     "total": 27,
-    "alive": 13,
+    "alive": 11,
     "tested": 25
   },
   "live": {
-    "lines": 488,
-    "computed_lines": 488,
+    "lines": 490,
+    "computed_lines": 490,
     "stale": false,
-    "channels": 337,
-    "measured_now": 296,
-    "inherited_kbps": 24,
-    "carry_alive": 17,
-    "carry_gone": 62,
-    "carry_kept": 64,
+    "channels": 336,
+    "measured_now": 299,
+    "inherited_kbps": 14,
+    "carry_alive": 12,
+    "carry_gone": 70,
+    "carry_kept": 69,
     "carry_expired": 0,
-    "median_kbps": 1377,
-    "p10_kbps": 421,
-    "slow_tagged": 46
+    "median_kbps": 1516,
+    "p10_kbps": 488,
+    "slow_tagged": 40
   },
   "epg": "https://epg.112114.xyz/?ch={name}&date={date}",
   "spare": {
@@ -54,7 +54,7 @@
   },
   "lite": {
     "enabled": true,
-    "probed_at": "2026-11-12 10:24:13",
+    "probed_at": "2026-11-13 09:58:56",
     "evidence_age_days": 0.0,
     "passed": true,
     "probe_sites": 18,
@@ -89,7 +89,7 @@
       "山海情": 10
     },
     "config_ok": true,
-    "rebuilt_at": "2026-11-12 10:24:13",
+    "rebuilt_at": "2026-11-13 09:58:56",
     "config_sites": 10,
     "config_parses": 9,
     "auto": {
