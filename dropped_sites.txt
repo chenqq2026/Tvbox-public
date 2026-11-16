@@ -14,7 +14,6 @@ NXDOMAIN	drpy_js_JustLive	弹幕 | JustLive[js]	live.yj1211.work
 NXDOMAIN	天天	弹幕 | 天天[jar]	op.ysdqjs.cn$$$null$$$1
 NXDOMAIN	drpy_js_百忙无果	官源 | 芒果[js]	pianku.api.%6d%67%74%76.com
 NXDOMAIN	drpy_js_小狗影院	影视 | 小狗影院[js]	pupvod.com
-NXDOMAIN	drpy_js_免费看	影视 | 免费看[js]	qzy998-1.ysgq.xyz
 NXDOMAIN	drpy_js_腾云驾雾	官源 | 腾讯[js]	v.%71%71.com
 NXDOMAIN	drpy_js_咕噜[V2]	影视 | 咕噜[V2]	w.996w.top
 NXDOMAIN	drpy_js_优酷	官源 | 优酷[js]	www.%79%6f%75%6b%75.com
@@ -42,6 +41,7 @@ NXDOMAIN	drpy_js_天天视频	起飞 | 天天视频[js]	www.ttsp.tv
 NXDOMAIN	drpy_js_西瓜影院	影视 | 西瓜影院[js]	www.uccomic.com
 NXDOMAIN	drpy_js_UM电影[V2]	影视 | UM电影[V2]	www.umkan.cc
 NXDOMAIN	drpy_js_清风DJ	音频 | 清风DJ[js]	www.vvvdj.com
+NXDOMAIN	drpy_js_小白菜电影	影视 | 小白菜电影[js]	www.xbcdy.com
 NXDOMAIN	drpy_js_抓饭体育	体育 | 抓饭体育[js]	www.zhuafan.xin
 NXDOMAIN	drpy_js_影视之家[V2]	影视 | 影视之家[V2][js]	yingszj.xn--654a.cc
 NXDOMAIN	drpy_js_鑫鑫[V2]	影视 | 鑫鑫[V2]	yingszj.xn--654a.cc
