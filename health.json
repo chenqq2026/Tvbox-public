@@ -1,16 +1,18 @@
 {
-  "updated": "2026-11-17 11:59:04",
+  "updated": "2026-11-18 11:02:29",
   "jar": {
-    "md5": "85c2c38467d85bb4e98c426af4519eab",
-    "size_mb": 1.84,
+    "md5": "decb609b673019e18512dc3a96b6a252",
+    "size_mb": 1.62,
     "declared_match": true,
     "changed": true
   },
   "sites": {
     "total": 170,
-    "cms": 22,
-    "spider": 147,
-    "cms_dead_today": []
+    "cms": 21,
+    "spider": 148,
+    "cms_dead_today": [
+      "🦚360┃采集·荐片"
+    ]
   },
   "parses": {
     "total": 27,
@@ -22,15 +24,15 @@
     "computed_lines": 496,
     "stale": false,
     "channels": 344,
-    "measured_now": 308,
-    "inherited_kbps": 16,
-    "carry_alive": 12,
-    "carry_gone": 72,
-    "carry_kept": 70,
+    "measured_now": 298,
+    "inherited_kbps": 26,
+    "carry_alive": 6,
+    "carry_gone": 70,
+    "carry_kept": 67,
     "carry_expired": 0,
-    "median_kbps": 1585,
-    "p10_kbps": 480,
-    "slow_tagged": 43
+    "median_kbps": 1259,
+    "p10_kbps": 337,
+    "slow_tagged": 62
   },
   "epg": "https://epg.112114.xyz/?ch={name}&date={date}",
   "spare": {
@@ -54,42 +56,43 @@
   },
   "lite": {
     "enabled": true,
-    "probed_at": "2026-11-17 11:59:30",
+    "probed_at": "2026-11-18 11:02:53",
     "evidence_age_days": 0.0,
     "passed": true,
-    "probe_sites": 18,
-    "keep_sites": 10,
+    "probe_sites": 17,
+    "keep_sites": 9,
     "keep_parses": 9,
     "zero_hit_sites": [
       "影视 • 天涯",
+      "🐯虎牙采集·ok线路1",
       "🐉┃索尼┃高清·ok线路1",
       "影视 • 卧龙资源[直连]",
       "影视 • 金蝉",
       "影视 • 小绵阳"
     ],
     "keyword_stations": {
-      "流浪地球": 10,
-      "狂飙": 10,
-      "三体": 10,
-      "庆余年": 10,
-      "繁花": 10,
-      "哪吒": 10,
-      "封神": 10,
-      "长安十二时辰": 9
+      "流浪地球": 8,
+      "狂飙": 8,
+      "三体": 8,
+      "庆余年": 8,
+      "繁花": 8,
+      "哪吒": 8,
+      "封神": 8,
+      "长安十二时辰": 8
     },
     "holdout_stations": {
-      "甄嬛传": 9,
-      "斗罗大陆": 10,
-      "周处除三害": 10,
-      "隐秘的角落": 9,
-      "满江红": 10,
-      "奥本海默": 10,
-      "鱿鱼游戏": 10,
-      "山海情": 10
+      "甄嬛传": 7,
+      "斗罗大陆": 8,
+      "周处除三害": 8,
+      "隐秘的角落": 8,
+      "满江红": 8,
+      "奥本海默": 8,
+      "鱿鱼游戏": 8,
+      "山海情": 8
     },
     "config_ok": true,
-    "rebuilt_at": "2026-11-17 11:59:30",
-    "config_sites": 10,
+    "rebuilt_at": "2026-11-18 11:02:53",
+    "config_sites": 9,
     "config_parses": 9,
     "auto": {
       "source": "ci-auto（GitHub Actions 海外机房）",
@@ -98,7 +101,7 @@
       "locked_out": 8,
       "ci_extra_keep_blocked": 3,
       "events_today": 0,
-      "keep_sites": 10,
+      "keep_sites": 9,
       "keep_parses": 9
     }
   }
