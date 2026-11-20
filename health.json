@@ -1,5 +1,5 @@
 {
-  "updated": "2026-11-19 10:41:02",
+  "updated": "2026-11-20 10:25:03",
   "jar": {
     "md5": "decb609b673019e18512dc3a96b6a252",
     "size_mb": 1.62,
@@ -18,19 +18,19 @@
     "tested": 25
   },
   "live": {
-    "lines": 500,
-    "computed_lines": 500,
+    "lines": 501,
+    "computed_lines": 501,
     "stale": false,
-    "channels": 346,
-    "measured_now": 202,
-    "inherited_kbps": 41,
+    "channels": 344,
+    "measured_now": 222,
+    "inherited_kbps": 24,
     "carry_alive": 7,
-    "carry_gone": 154,
-    "carry_kept": 142,
+    "carry_gone": 149,
+    "carry_kept": 141,
     "carry_expired": 0,
-    "median_kbps": 1326,
-    "p10_kbps": 383,
-    "slow_tagged": 55
+    "median_kbps": 1514,
+    "p10_kbps": 453,
+    "slow_tagged": 47
   },
   "epg": "https://epg.112114.xyz/?ch={name}&date={date}",
   "spare": {
@@ -54,43 +54,44 @@
   },
   "lite": {
     "enabled": true,
-    "probed_at": "2026-11-19 10:42:00",
+    "probed_at": "2026-11-20 10:25:24",
     "evidence_age_days": 0.0,
     "passed": true,
     "probe_sites": 18,
-    "keep_sites": 10,
+    "keep_sites": 9,
     "keep_parses": 9,
     "zero_hit_sites": [
       "影视 • 天涯",
       "🐉┃索尼┃高清·ok线路1",
       "影视 • 卧龙资源[直连]",
       "🐯虎牙采集·ok线路1",
+      "影视 • 极速[直连]",
       "影视 • 金蝉",
       "影视 • 小绵阳"
     ],
     "keyword_stations": {
-      "流浪地球": 9,
-      "狂飙": 9,
-      "三体": 9,
-      "庆余年": 9,
-      "繁花": 9,
-      "哪吒": 9,
-      "封神": 9,
-      "长安十二时辰": 8
+      "流浪地球": 8,
+      "狂飙": 8,
+      "三体": 8,
+      "庆余年": 8,
+      "繁花": 8,
+      "哪吒": 8,
+      "封神": 8,
+      "长安十二时辰": 7
     },
     "holdout_stations": {
-      "甄嬛传": 8,
-      "斗罗大陆": 9,
-      "周处除三害": 9,
-      "隐秘的角落": 8,
-      "满江红": 9,
-      "奥本海默": 9,
-      "鱿鱼游戏": 9,
-      "山海情": 9
+      "甄嬛传": 7,
+      "斗罗大陆": 8,
+      "周处除三害": 8,
+      "隐秘的角落": 7,
+      "满江红": 8,
+      "奥本海默": 8,
+      "鱿鱼游戏": 8,
+      "山海情": 8
     },
     "config_ok": true,
-    "rebuilt_at": "2026-11-19 10:42:00",
-    "config_sites": 10,
+    "rebuilt_at": "2026-11-20 10:25:24",
+    "config_sites": 9,
     "config_parses": 9,
     "auto": {
       "source": "ci-auto（GitHub Actions 海外机房）",
@@ -99,7 +100,7 @@
       "locked_out": 8,
       "ci_extra_keep_blocked": 3,
       "events_today": 1,
-      "keep_sites": 10,
+      "keep_sites": 9,
       "keep_parses": 9
     }
   }
