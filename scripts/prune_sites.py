@@ -25,6 +25,9 @@ import urllib.parse
 import urllib.request  # get() 依赖；缺失时 js 规则全部下载失败，295 站退化成「无法判定主域名」
 
 GAO_PROXY = "https://gh-proxy.com/"
+# 本仓库自持 jar 写入配置时走 ghfast（实测比 gh-proxy 快约 10 倍）；
+# 下载上游 m3u 仍保留 GAO_PROXY 多镜像兜底。
+SELF_PROXY = "https://ghfast.top/"
 SKIP = ("githubusercontent", "gh-proxy", "jsdelivr", "github.com", "gitee.com",
         "ghproxy", "gitmirror", "127.0.0.1", "localhost", "servicewechat",
         "wyfc.qzz.io", "douban.com")
@@ -258,7 +261,7 @@ EPG = "https://epg.cdn.loc.cc/?ch={name}&date={date}"
 LOGO = "https://logo.wyfc.qzz.io/{name}.png"
 
 # spider 指向本仓库镜像的 jar（与 update_daily.py 保持一致），不再指向 gao/qist 上游
-GH_SELF = GAO_PROXY + "https://raw.githubusercontent.com/chenqq2026/Tvbox-public/main/"
+GH_SELF = SELF_PROXY + "https://raw.githubusercontent.com/chenqq2026/Tvbox-public/main/"
 spider_line = cfg["spider"]
 if os.path.exists("jar/spider.jar"):
     spider_line = GH_SELF + "jar/spider.jar;md5;" + hashlib.md5(

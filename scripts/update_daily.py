@@ -42,6 +42,10 @@ def fetch_first(urls, timeout=25, n=400000):
 
 # ---------- 1. qist jsm.json ----------
 GAO_PROXY = "https://gh-proxy.com/"
+# 写进配置的本仓库自持 jar 走 ghfast：实测 1.7MB jar 经 gh-proxy 需 6~20 秒
+# （83~261KB/s），ghfast.top 仅 1.95 秒（871KB/s）。上游资源下载仍走 GAO_PROXY
+# 多镜像兜底，这里只改「TVBox 实际拉取 jar 的地址」，不影响上游可用性。
+SELF_PROXY = "https://ghfast.top/"
 RAW_QIST = "https://raw.githubusercontent.com/qist/tvbox/master/"
 GH_RAW_SELF = "https://raw.githubusercontent.com/chenqq2026/Tvbox-public/main/"
 JAR_MD5_RE = re.compile(r"md5;([0-9a-f]{32})")
@@ -113,7 +117,7 @@ if jar_changed:
 print(f"  jar {len(jar) / 1048576:.2f}MB md5={md5} 来源={jar_src[:46]} "
       f"声明一致={declared_md5 == md5} 更新={jar_changed}")
 # spider 指向本仓库镜像（不再依赖 qist 上游，qist 删库也不影响）
-jsm["spider"] = GAO_PROXY + GH_RAW_SELF + "jar/spider.jar;md5;" + md5
+jsm["spider"] = SELF_PROXY + GH_RAW_SELF + "jar/spider.jar;md5;" + md5
 # 修复站内相对路径
 for s in jsm.get("sites", []):
     for f in ("api", "ext"):
@@ -736,7 +740,7 @@ try:
                 raise ValueError(f"不是合法 jar（头部 {jb[:2]!r}，{len(jb)/1024:.0f}KB）")
             _zip.ZipFile(_io.BytesIO(jb)).namelist()   # 能正常打开才算数
             open(SPARE_JAR, "wb").write(jb)
-            spare["spider"] = (GAO_PROXY + GH_RAW_SELF + "jar/spare_spider.jar;md5;"
+            spare["spider"] = (SELF_PROXY + GH_RAW_SELF + "jar/spare_spider.jar;md5;"
                                + hashlib.md5(jb).hexdigest())
             jar_mirror = True
         except Exception as e:
@@ -744,7 +748,7 @@ try:
     # 关键：拉不到新 jar 时绝不能退回上游那个第三方 CDN 的 spider，
     # 否则本仓库已镜像的 jar 白镜像，500+ 站又回到依赖别人 CDN 的状态。
     if not jar_mirror and os.path.exists(SPARE_JAR):
-        spare["spider"] = (GAO_PROXY + GH_RAW_SELF + "jar/spare_spider.jar;md5;"
+        spare["spider"] = (SELF_PROXY + GH_RAW_SELF + "jar/spare_spider.jar;md5;"
                            + hashlib.md5(open(SPARE_JAR, "rb").read()).hexdigest())
         jar_reused = True
     json.dump(spare, open("spare_juhe.json", "w", encoding="utf-8", newline="\n"),
