@@ -1,0 +1,18 @@
+{
+  "current": "ghfast",
+  "streak": 0,
+  "candidate": null,
+  "history": [
+    {
+      "date": "2026-11-20 17:27:17",
+      "best": "ghfast",
+      "gain": 0.0,
+      "decision": "保持（最快即当前）",
+      "scores": {
+        "ghfast": 2.582,
+        "gh-proxy": 5.832,
+        "raw": null
+      }
+    }
+  ]
+}

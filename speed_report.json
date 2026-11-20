@@ -1,0 +1,56 @@
+{
+  "checked_at": "2026-11-20 17:27:17",
+  "scores": {
+    "ghfast": 2.582,
+    "gh-proxy": 5.832,
+    "raw": null
+  },
+  "details": {
+    "ghfast": {
+      "jar/spider.jar": {
+        "median_s": 2.963,
+        "samples": [
+          3.836,
+          2.09
+        ],
+        "weight": 0.8
+      },
+      "config_all.json": {
+        "median_s": 1.059,
+        "samples": [
+          1.179,
+          0.938
+        ],
+        "weight": 0.2
+      }
+    },
+    "gh-proxy": {
+      "jar/spider.jar": {
+        "median_s": 7.101,
+        "samples": [
+          7.392,
+          6.811
+        ],
+        "weight": 0.8
+      },
+      "config_all.json": {
+        "median_s": 0.753,
+        "samples": [
+          0.772,
+          0.734
+        ],
+        "weight": 0.2
+      }
+    },
+    "raw": {
+      "jar/spider.jar": "全部失败"
+    }
+  },
+  "current": "ghfast",
+  "best": "ghfast",
+  "gain": 0.0,
+  "streak": 0,
+  "candidate": null,
+  "decision": "保持（最快即当前）",
+  "dry_run": true
+}
