@@ -1,0 +1,82 @@
+{
+  "checked_at": "2026-11-20 17:16:51",
+  "scope": "产物完整性 + 通道固化（CI 不做测速/不切通道）",
+  "targets": [
+    {
+      "name": "主用 config_all",
+      "file": "config_all.json",
+      "field": "sites",
+      "ok": true,
+      "count": 171
+    },
+    {
+      "name": "精简 config_lite",
+      "file": "config_lite.json",
+      "field": "sites",
+      "ok": true,
+      "count": 9
+    },
+    {
+      "name": "应急 spare_juhe",
+      "file": "spare_juhe.json",
+      "field": "sites",
+      "ok": true,
+      "count": 554
+    },
+    {
+      "name": "剔站 pruned",
+      "file": "pruned_config.json",
+      "field": "sites",
+      "ok": true,
+      "count": 259
+    },
+    {
+      "name": "直播 live_verified",
+      "file": "live_verified.m3u",
+      "field": "lines",
+      "ok": true,
+      "count": 501
+    },
+    {
+      "name": "多仓壳 config",
+      "file": "config.json",
+      "field": "urls",
+      "ok": true,
+      "count": 3
+    }
+  ],
+  "channels": [
+    {
+      "file": "config_all.json",
+      "urls": 1,
+      "channel": "ghfast",
+      "off_channel": 0
+    },
+    {
+      "file": "config_lite.json",
+      "urls": 1,
+      "channel": "ghfast",
+      "off_channel": 0
+    },
+    {
+      "file": "spare_juhe.json",
+      "urls": 1,
+      "channel": "ghfast",
+      "off_channel": 0
+    },
+    {
+      "file": "pruned_config.json",
+      "urls": 1,
+      "channel": "ghfast",
+      "off_channel": 0
+    },
+    {
+      "file": "config.json",
+      "urls": 3,
+      "channel": "ghfast",
+      "off_channel": 0
+    }
+  ],
+  "all_ok": true,
+  "problems": []
+}

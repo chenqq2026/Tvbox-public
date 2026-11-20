@@ -33,6 +33,13 @@ jobs:
         # 直播 IPTV 地方台是另一回事（地域限制，CI 不可达），两条链路判定不同。
         run: python scripts/lite_auto.py
 
+      - name: 订阅源可用性监控（完整性+通道固化，不测速不切通道）
+        # CI 在海外机房，测国内加速通道速度会系统性误判（直播误杀已验证），
+        # 所以这里只做两件 CI 里 100% 可靠的事：产物完整性 + spider.jar 通道是否
+        # 仍为国内实测最优的 ghfast.top。异常写 monitor_report.json，不自动处理、
+        # 不 fail workflow——是否介入由人决定，避免抖动。
+        run: python scripts/monitor_sources.py
+
       - name: 写入运行摘要
         if: always()
         run: |
@@ -44,6 +51,11 @@ jobs:
               echo "|---|---|"
               python scripts/summary.py
             } >> "$GITHUB_STEP_SUMMARY"
+          fi
+          if [ -f monitor_report.json ]; then
+            echo "" >> "$GITHUB_STEP_SUMMARY"
+            echo "## 订阅源监控（完整性+通道，CI 不测速）" >> "$GITHUB_STEP_SUMMARY"
+            python scripts/monitor_sources.py --summary >> "$GITHUB_STEP_SUMMARY"
           fi
 
       - name: 提交（有变化才提交）
@@ -58,6 +70,7 @@ jobs:
           if [ -f config_lite.json ]; then FILES="$FILES config_lite.json"; fi
           if [ -f lite_probe.json ]; then FILES="$FILES lite_probe.json"; fi
           if [ -f lite_state.json ]; then FILES="$FILES lite_state.json"; fi
+          if [ -f monitor_report.json ]; then FILES="$FILES monitor_report.json"; fi
           if git diff --quiet -- $FILES; then
             echo "内容无变化，跳过提交"
           else
