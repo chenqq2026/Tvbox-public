@@ -1,5 +1,5 @@
 {
-  "checked_at": "2026-11-21 10:19:10",
+  "checked_at": "2026-11-22 09:22:43",
   "scope": "产物完整性 + 通道固化（CI 不做测速/不切通道）",
   "targets": [
     {
@@ -7,14 +7,14 @@
       "file": "config_all.json",
       "field": "sites",
       "ok": true,
-      "count": 173
+      "count": 170
     },
     {
       "name": "精简 config_lite",
       "file": "config_lite.json",
       "field": "sites",
       "ok": true,
-      "count": 9
+      "count": 10
     },
     {
       "name": "应急 spare_juhe",
@@ -35,7 +35,7 @@
       "file": "live_verified.m3u",
       "field": "lines",
       "ok": true,
-      "count": 503
+      "count": 504
     },
     {
       "name": "多仓壳 config",
