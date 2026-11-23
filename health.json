@@ -1,7 +1,7 @@
 {
-  "updated": "2026-11-22 09:22:24",
+  "updated": "2026-11-23 09:49:26",
   "jar": {
-    "md5": "16e7a6d79af111b1a67a04769e877fb7",
+    "md5": "efdb2c1d9a2e8c26e5a74ba5f53dfc56",
     "size_mb": 1.63,
     "declared_match": true,
     "changed": true
@@ -18,27 +18,27 @@
     "tested": 25
   },
   "live": {
-    "lines": 504,
-    "computed_lines": 504,
+    "lines": 505,
+    "computed_lines": 505,
     "stale": false,
-    "channels": 345,
-    "measured_now": 223,
-    "inherited_kbps": 20,
-    "carry_alive": 3,
-    "carry_gone": 146,
-    "carry_kept": 145,
+    "channels": 346,
+    "measured_now": 227,
+    "inherited_kbps": 19,
+    "carry_alive": 7,
+    "carry_gone": 148,
+    "carry_kept": 144,
     "carry_expired": 0,
-    "median_kbps": 1596,
-    "p10_kbps": 464,
-    "slow_tagged": 43
+    "median_kbps": 1532,
+    "p10_kbps": 457,
+    "slow_tagged": 45
   },
   "epg": "https://epg.112114.xyz/?ch={name}&date={date}",
   "spare": {
     "ok": true,
-    "sites": 554,
+    "sites": 553,
     "lives": 17,
-    "jar_mirrored": false,
-    "jar_reused": true
+    "jar_mirrored": true,
+    "jar_reused": false
   },
   "vod_cdn": {
     "probed": true,
@@ -54,15 +54,15 @@
   },
   "lite": {
     "enabled": true,
-    "probed_at": "2026-11-22 09:22:43",
+    "probed_at": "2026-11-23 09:49:48",
     "evidence_age_days": 0.0,
     "passed": true,
     "probe_sites": 18,
     "keep_sites": 10,
     "keep_parses": 9,
     "zero_hit_sites": [
-      "影视 • 天涯",
       "🐉┃索尼┃高清·ok线路1",
+      "影视 • 天涯",
       "影视 • 卧龙资源[直连]",
       "影视 • 金蝉",
       "影视 • 小绵阳"
@@ -88,7 +88,7 @@
       "山海情": 10
     },
     "config_ok": true,
-    "rebuilt_at": "2026-11-22 09:22:43",
+    "rebuilt_at": "2026-11-23 09:49:48",
     "config_sites": 10,
     "config_parses": 9,
     "auto": {
@@ -97,7 +97,7 @@
       "local_fresh": false,
       "locked_out": 8,
       "ci_extra_keep_blocked": 3,
-      "events_today": 1,
+      "events_today": 0,
       "keep_sites": 10,
       "keep_parses": 9
     }
