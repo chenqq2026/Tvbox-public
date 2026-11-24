@@ -1,10 +1,10 @@
 {
-  "updated": "2026-11-23 09:49:26",
+  "updated": "2026-11-24 13:26:25",
   "jar": {
     "md5": "efdb2c1d9a2e8c26e5a74ba5f53dfc56",
     "size_mb": 1.63,
     "declared_match": true,
-    "changed": true
+    "changed": false
   },
   "sites": {
     "total": 170,
@@ -18,24 +18,24 @@
     "tested": 25
   },
   "live": {
-    "lines": 505,
-    "computed_lines": 505,
+    "lines": 506,
+    "computed_lines": 506,
     "stale": false,
-    "channels": 346,
-    "measured_now": 227,
-    "inherited_kbps": 19,
-    "carry_alive": 7,
-    "carry_gone": 148,
-    "carry_kept": 144,
+    "channels": 347,
+    "measured_now": 234,
+    "inherited_kbps": 12,
+    "carry_alive": 4,
+    "carry_gone": 147,
+    "carry_kept": 141,
     "carry_expired": 0,
-    "median_kbps": 1532,
-    "p10_kbps": 457,
-    "slow_tagged": 45
+    "median_kbps": 1282,
+    "p10_kbps": 410,
+    "slow_tagged": 49
   },
   "epg": "https://epg.112114.xyz/?ch={name}&date={date}",
   "spare": {
     "ok": true,
-    "sites": 553,
+    "sites": 549,
     "lives": 17,
     "jar_mirrored": true,
     "jar_reused": false
@@ -54,15 +54,15 @@
   },
   "lite": {
     "enabled": true,
-    "probed_at": "2026-11-23 09:49:48",
+    "probed_at": "2026-11-24 13:26:50",
     "evidence_age_days": 0.0,
     "passed": true,
     "probe_sites": 18,
     "keep_sites": 10,
     "keep_parses": 9,
     "zero_hit_sites": [
-      "🐉┃索尼┃高清·ok线路1",
       "影视 • 天涯",
+      "🐉┃索尼┃高清·ok线路1",
       "影视 • 卧龙资源[直连]",
       "影视 • 金蝉",
       "影视 • 小绵阳"
@@ -88,7 +88,7 @@
       "山海情": 10
     },
     "config_ok": true,
-    "rebuilt_at": "2026-11-23 09:49:48",
+    "rebuilt_at": "2026-11-24 13:26:50",
     "config_sites": 10,
     "config_parses": 9,
     "auto": {
