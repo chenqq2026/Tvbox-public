@@ -13,6 +13,39 @@
         "gh-proxy": 5.832,
         "raw": null
       }
+    },
+    {
+      "date": "2026-11-23 12:02:29",
+      "best": "gh-proxy",
+      "gain": 0.8425,
+      "decision": "观察中 → gh-proxy（第 1/3 天，暂不切）",
+      "scores": {
+        "ghfast": 6.013,
+        "gh-proxy": 0.947,
+        "raw": null
+      }
+    },
+    {
+      "date": "2026-11-24 12:28:17",
+      "best": "gh-proxy",
+      "gain": 0.4221,
+      "decision": "观察中 → gh-proxy（第 2/3 天，暂不切）",
+      "scores": {
+        "ghfast": 3.435,
+        "gh-proxy": 1.985,
+        "raw": null
+      }
+    },
+    {
+      "date": "2026-11-25 10:47:43",
+      "best": "gh-proxy",
+      "gain": 0.0445,
+      "decision": "保持（提升 4.5% < 20% 门槛）",
+      "scores": {
+        "ghfast": 4.02,
+        "gh-proxy": 3.841,
+        "raw": null
+      }
     }
   ]
 }

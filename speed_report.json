@@ -1,43 +1,43 @@
 {
-  "checked_at": "2026-11-20 17:27:17",
+  "checked_at": "2026-11-25 10:47:43",
   "scores": {
-    "ghfast": 2.582,
-    "gh-proxy": 5.832,
+    "ghfast": 4.02,
+    "gh-proxy": 3.841,
     "raw": null
   },
   "details": {
     "ghfast": {
       "jar/spider.jar": {
-        "median_s": 2.963,
+        "median_s": 4.553,
         "samples": [
-          3.836,
-          2.09
+          5.731,
+          3.375
         ],
         "weight": 0.8
       },
       "config_all.json": {
-        "median_s": 1.059,
+        "median_s": 1.89,
         "samples": [
-          1.179,
-          0.938
+          2.835,
+          0.945
         ],
         "weight": 0.2
       }
     },
     "gh-proxy": {
       "jar/spider.jar": {
-        "median_s": 7.101,
+        "median_s": 4.426,
         "samples": [
-          7.392,
-          6.811
+          1.177,
+          7.676
         ],
         "weight": 0.8
       },
       "config_all.json": {
-        "median_s": 0.753,
+        "median_s": 1.502,
         "samples": [
-          0.772,
-          0.734
+          1.609,
+          1.394
         ],
         "weight": 0.2
       }
@@ -47,10 +47,10 @@
     }
   },
   "current": "ghfast",
-  "best": "ghfast",
-  "gain": 0.0,
+  "best": "gh-proxy",
+  "gain": 0.0445,
   "streak": 0,
   "candidate": null,
-  "decision": "保持（最快即当前）",
-  "dry_run": true
+  "decision": "保持（提升 4.5% < 20% 门槛）",
+  "dry_run": false
 }
