@@ -503,22 +503,42 @@ PARSER_TEST = "https://vip.ffzy-play.com/share/20240101/1234/index.m3u8"
 
 
 def parse_ok(item):
+    """二次复测判活，返回 (url, verdict, median_s)。
+
+    旧版只测一次，冷启动/网络抖动会把活解析器误判成死（实测 4 个候选首轮
+    只过 1~3 个，二次复测 4/4 全过）。这里同一接口测 2 次，任一成功即算可用，
+    并带回响应中位数供排序用。按 url 索引而非 name（同名解析器会互相覆盖）。
+    """
     name, url = item
     if not url.startswith("http"):
-        return name, None
+        return url, None, 0.0
     tpl = url if ("url=" in url or "v=" in url) else url + ("&url=" if "?" in url else "?url=")
-    try:
-        b = get(tpl + urllib.parse.quote(PARSER_TEST, safe=""), timeout=9, n=80000)
-        low = b.decode("utf-8", "ignore").lower()
-        if any(x in low for x in ("域名过期", "已过期", "已停止", "not found", "已暂停")):
-            return name, False
-        return name, any(x in low for x in (".m3u8", "video", "player", "iframe", "var url"))
-    except Exception:
-        return name, False
+    ok_n, times = 0, []
+    for _ in range(2):
+        try:
+            t0 = time.time()
+            b = get(tpl + urllib.parse.quote(PARSER_TEST, safe=""), timeout=9, n=80000)
+            dt = time.time() - t0
+            low = b.decode("utf-8", "ignore").lower()
+            if any(x in low for x in ("域名过期", "已过期", "已停止", "not found", "已暂停")):
+                continue
+            if any(x in low for x in (".m3u8", "video", "player", "iframe", "var url")):
+                ok_n += 1
+                times.append(dt)
+        except Exception:
+            continue
+    if ok_n:
+        times.sort()
+        return url, True, round(times[len(times) // 2], 3)
+    return url, False, 0.0
 
 
 def build_parses(parses_in):
-    """按 url 去重，保序；再用实测结果把可用的稳定排在前面。"""
+    """按 url 去重；二次复测判活；可用的按响应速度升序置顶，死的沉底但不删。
+
+    TVBox 按顺序尝试解析器，前面的死接口每个都要等超时——这是「点开慢」的常见
+    真凶。可用接口排前面能让盒子第一次就命中，明显减少等待。
+    """
     uniq, seen_u = [], set()
     for p in parses_in:
         u = str(p.get("url") or "")
@@ -532,15 +552,27 @@ def build_parses(parses_in):
     res = {}
     if cand:
         with cf.ThreadPoolExecutor(12) as ex:
-            for name, ok in ex.map(parse_ok, cand):
-                res[name] = ok
-    ok_n = sum(1 for v in res.values() if v)
-    print(f"  解析器 {len(parses_in)} -> 去重后 {len(uniq)} | 实测可用 {ok_n}/{len(res)}")
-    alive = [p for p in uniq if res.get(p.get("name")) is True]
-    unknown = [p for p in uniq if res.get(p.get("name")) is None]
-    dead = [p for p in uniq if res.get(p.get("name")) is False]
-    return alive + unknown + dead, {"total": len(uniq), "alive": ok_n,
-                                    "tested": len(res)}
+            for url, ok, med in ex.map(parse_ok, cand):
+                res[url] = (ok, med)
+    alive_n = sum(1 for v, _m in res.values() if v is True)
+    print(f"  解析器 {len(parses_in)} -> 去重后 {len(uniq)} | 二次复测可用 {alive_n}/{len(res)}")
+    alive, dead = [], []
+    for p in uniq:
+        u = str(p.get("url") or "")
+        verdict, med = res.get(u, (None, 0.0))
+        if verdict is True:
+            alive.append((med, p))
+        elif verdict is None:
+            dead.append((999.0, p))   # 非 http（如 Parallel/Sequence）保持后置
+        else:
+            dead.append((1000.0, p))
+    alive.sort(key=lambda x: x[0])
+    dead.sort(key=lambda x: x[0])
+    ordered = [p for _m, p in alive] + [p for _m, p in dead]
+    if alive:
+        print(f"  可用解析器置顶（最快 {alive[0][0]}s）→ 盒子上手即可命中")
+    return ordered, {"total": len(uniq), "alive": alive_n,
+                     "tested": len(res)}
 
 # ---------- 4. 合并成单仓配置 config_all.json ----------
 print("== 4. 合并单仓配置 ==")

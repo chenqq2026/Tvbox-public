@@ -1,0 +1,182 @@
+[
+  {
+    "name": "CK",
+    "url": "https://www.ckplayer.vip/jiexi/?url=",
+    "verdict": "OK",
+    "median_s": 0.620984
+  },
+  {
+    "name": "8090嗅探",
+    "url": "https://www.8090g.cn/jiexi/?url=",
+    "verdict": "OK",
+    "median_s": 0.618519
+  },
+  {
+    "name": "剖云",
+    "url": "https://www.pouyun.com/?url=",
+    "verdict": "OK",
+    "median_s": 1.980473
+  },
+  {
+    "name": "PM",
+    "url": "https://www.playm3u8.cn/jiexi.php?url=",
+    "verdict": "OK",
+    "median_s": 0.612896
+  },
+  {
+    "name": "999",
+    "url": "https://huayong.net/999/?v=",
+    "verdict": "FAIL",
+    "median_s": 0
+  },
+  {
+    "name": "jx5",
+    "url": "https://huayong.net/jx5/?url=",
+    "verdict": "FAIL",
+    "median_s": 0
+  },
+  {
+    "name": "无尽",
+    "url": "https://jx.wujinkk.com/dplayer/?url=",
+    "verdict": "OK",
+    "median_s": 1.159942
+  },
+  {
+    "name": "yemu",
+    "url": "https://www.yemu.xyz/?url=",
+    "verdict": "OK",
+    "median_s": 0.516891
+  },
+  {
+    "name": "解析1",
+    "url": "https://bd.jx.cn/?url=",
+    "verdict": "OK",
+    "median_s": 2.069269
+  },
+  {
+    "name": "解析2",
+    "url": "https://jx.m3u8.tv/jiexi/?url=",
+    "verdict": "FAIL",
+    "median_s": 0
+  },
+  {
+    "name": "vip4",
+    "url": "https://huayong.net/vip4/?url=",
+    "verdict": "FAIL",
+    "median_s": 0
+  },
+  {
+    "name": "云解",
+    "url": "https://yparse.ik9.cc/index.php?url=",
+    "verdict": "OK",
+    "median_s": 1.539763
+  },
+  {
+    "name": "淘片",
+    "url": "https://jx.yparse.com/index.php?url=",
+    "verdict": "OK",
+    "median_s": 2.457536
+  },
+  {
+    "name": "夜幕",
+    "url": "https://yemu.xyz/?url=",
+    "verdict": "OK",
+    "median_s": 0.870365
+  },
+  {
+    "name": "Json聚合",
+    "url": "Demo",
+    "verdict": "SKIP",
+    "median_s": 0
+  },
+  {
+    "name": "虾米",
+    "url": "https://jx.xmflv.com/?url=",
+    "verdict": "FAIL",
+    "median_s": 0
+  },
+  {
+    "name": "咸鱼",
+    "url": "https://jx.xyflv.cc/?url=",
+    "verdict": "OK",
+    "median_s": 1.466041
+  },
+  {
+    "name": "爱豆",
+    "url": "https://jx.aidouer.net/?url=",
+    "verdict": "FAIL",
+    "median_s": 0
+  },
+  {
+    "name": "jx",
+    "url": "https://jx.m3u8.tv/jx/jx.php?url=",
+    "verdict": "FAIL",
+    "median_s": 0
+  },
+  {
+    "name": "羽路均沾",
+    "url": "https://ylu.cc/index.php?url=",
+    "verdict": "FAIL",
+    "median_s": 0
+  },
+  {
+    "name": "解析3",
+    "url": "https://player.mrgaocloud.com/player/?url=",
+    "verdict": "FAIL",
+    "median_s": 0
+  },
+  {
+    "name": "全民",
+    "url": "http://api.wpsseo.cn/?v=",
+    "verdict": "FAIL",
+    "median_s": 0
+  },
+  {
+    "name": "8090",
+    "url": "https://www.8090.la/lander?url=",
+    "verdict": "FAIL",
+    "median_s": 0
+  },
+  {
+    "name": "看看",
+    "url": "https://jx.m3u8.pw/?url=",
+    "verdict": "FAIL",
+    "median_s": 0
+  },
+  {
+    "name": "巧技",
+    "url": "http://pandown.pro/app/kkdy.php?url=",
+    "verdict": "FAIL",
+    "median_s": 0
+  },
+  {
+    "name": "左岸",
+    "url": "https://api.tyun77.cn/api.php/provide/parseDicturl?url=",
+    "verdict": "FAIL",
+    "median_s": 0
+  },
+  {
+    "name": "咸鱼",
+    "url": "https://jx.xymp4.cc/?url=",
+    "verdict": "FAIL",
+    "median_s": 0
+  },
+  {
+    "name": "无上",
+    "url": "https://mfjx.iwsyy.xyz/?url=",
+    "verdict": "FAIL",
+    "median_s": 0
+  },
+  {
+    "name": "巧计",
+    "url": "https://zy.qiaoji8.com/xiafan.php?url=",
+    "verdict": "FAIL",
+    "median_s": 0
+  },
+  {
+    "name": "七七",
+    "url": "https://jx.77flv.cc/?url=",
+    "verdict": "OK",
+    "median_s": 4.167584
+  }
+]
