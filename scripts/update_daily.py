@@ -668,8 +668,18 @@ except FileNotFoundError:
 except Exception as e:
     print(f"  多CDN加速站读取失败，忽略：{e}")
 
+# 本地已验证解析器（母源A/B探路 + 本机国内网络二次复测 3/3 通过）。
+# 上游 qist jsm.json 不含这几个，若只按上游重建会把它们冲掉；
+# 固定并入这里，上游怎么变都不丢。配置覆盖见 config_all/config_lite。
+LOCAL_EXTRA_PARSES = [
+    {"name": "8090嗅探", "url": "https://www.8090g.cn/jiexi/?url="},
+    {"name": "CK", "url": "https://www.ckplayer.vip/jiexi/?url="},
+    {"name": "剖云", "url": "https://www.pouyun.com/?url="},
+]
+
 # 解析器合并：去重 + 实测可用的排前（自持优先）
-merged_parses, parse_stat = build_parses(direct_parses + jsm.get("parses", []))
+merged_parses, parse_stat = build_parses(
+    direct_parses + LOCAL_EXTRA_PARSES + jsm.get("parses", []))
 
 # 直播：验证过的频道放第一位，qist 原有直播做备用（拉不到频道的直接剔）
 merged_lives = [{"name": "自建·已验证频道", "type": 0, "url": LIVE_URL,
