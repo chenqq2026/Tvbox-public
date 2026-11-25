@@ -4,6 +4,20 @@ TVBox / FongMi 影视 / OK影视 的配置源。**每天北京时间 05:17 由 G
 
 ---
 
+## ★ 唯一推荐地址（填这一个，以后不用再换）
+
+```
+https://ghfast.top/https://raw.githubusercontent.com/chenqq2026/Tvbox-public/main/config_all.json
+```
+
+> **地址固定不变，后台自动保持最快**：配置内部指向的 spider.jar（1.7MB，真正的点开慢瓶颈）由
+> 本地定时任务每天在国内网络实测三通道，只有连续 3 天快 ≥20% 才自动切换，否则不动。
+> 地址栏这个 URL 永远不用改——你的盒子每次拉配置都会拿到当前最优通道。
+> 想更快可用精简版（9 站/9 解析器）：把上面末尾 `config_all.json` 改成 `config_lite.json`。
+> 通道切换的完整依据见 `speed_report.json` / `speed_state.json`，CI 侧完整性校验见 `monitor_report.json`。
+
+---
+
 ## 一、导入地址
 
 ### 主地址（单仓，推荐）
