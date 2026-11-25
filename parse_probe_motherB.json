@@ -1,0 +1,307 @@
+{
+  "probed_at": "2026-11-25 12:49:53",
+  "test_vod": "https://vip.ffzy-play.com/share/20240101/1234/index.m3u8",
+  "base_total": 27,
+  "base_ok": 10,
+  "new_total": 22,
+  "new_ok": 1,
+  "rows": [
+    {
+      "group": "new",
+      "url": "Parallel",
+      "verdict": "超时/失败",
+      "s": 0
+    },
+    {
+      "group": "new",
+      "url": "Sequence",
+      "verdict": "超时/失败",
+      "s": 0
+    },
+    {
+      "group": "new",
+      "url": "https://jx.blbo.cc:4433/?url=",
+      "verdict": "超时/失败",
+      "s": 0
+    },
+    {
+      "group": "new",
+      "url": "https://api.m3u8.tv:5678/home/api?type=ys&uid=1931000&key=gktuvyzABEORSYZ135&url=",
+      "verdict": "超时/失败",
+      "s": 0
+    },
+    {
+      "group": "new",
+      "url": "https://jx.xmflv.com/?url=",
+      "verdict": "无有效内容",
+      "s": 0.69
+    },
+    {
+      "group": "new",
+      "url": "https://z1.m1907.cn/?jx=",
+      "verdict": "超时/失败",
+      "s": 0
+    },
+    {
+      "group": "new",
+      "url": "https://www.yemu.xyz/?url=",
+      "verdict": "可用",
+      "s": 0.36
+    },
+    {
+      "group": "new",
+      "url": "https://api.okjx.cc:3389/jx.php?url=",
+      "verdict": "超时/失败",
+      "s": 0
+    },
+    {
+      "group": "new",
+      "url": "https://jx.parwix.com:4433/player/?url=",
+      "verdict": "超时/失败",
+      "s": 0
+    },
+    {
+      "group": "new",
+      "url": "https://www.nxflv.com/?url=",
+      "verdict": "超时/失败",
+      "s": 0
+    },
+    {
+      "group": "new",
+      "url": "https://jx.m3u8.tv/jiexi/?url=",
+      "verdict": "超时/失败",
+      "s": 0
+    },
+    {
+      "group": "new",
+      "url": "http://api.diliktv.xyz/vip/jx.php?url=",
+      "verdict": "超时/失败",
+      "s": 0
+    },
+    {
+      "group": "new",
+      "url": "http://jx.gbxy.net.cn/?url=",
+      "verdict": "超时/失败",
+      "s": 0
+    },
+    {
+      "group": "new",
+      "url": "https://jhpc.manduhu.com/j1217.php?url=",
+      "verdict": "超时/失败",
+      "s": 0
+    },
+    {
+      "group": "new",
+      "url": "https://json.5lp.net/json.php?url=",
+      "verdict": "超时/失败",
+      "s": 0
+    },
+    {
+      "group": "new",
+      "url": "https://jhjx.kuanjv.com/newky/?url=",
+      "verdict": "超时/失败",
+      "s": 0
+    },
+    {
+      "group": "new",
+      "url": "http://api.vip123kan.vip/?url=",
+      "verdict": "超时/失败",
+      "s": 0
+    },
+    {
+      "group": "new",
+      "url": "https://humaosp.com/json.php?url=",
+      "verdict": "超时/失败",
+      "s": 0
+    },
+    {
+      "group": "new",
+      "url": "https://jx.4kdv.com/?url=",
+      "verdict": "超时/失败",
+      "s": 0
+    },
+    {
+      "group": "new",
+      "url": "https://vip.bljiex.com/?v=",
+      "verdict": "超时/失败",
+      "s": 0
+    },
+    {
+      "group": "new",
+      "url": "https://api.jhdyw.vip/?url=",
+      "verdict": "无有效内容",
+      "s": 2.29
+    },
+    {
+      "group": "new",
+      "url": "https://api.m3u8.tv:5678/home/api?type=ys&uid=15837989&key=abciorvxIJLPUY0258&url=",
+      "verdict": "超时/失败",
+      "s": 0
+    },
+    {
+      "group": "base",
+      "url": "https://www.playm3u8.cn/jiexi.php?url=",
+      "verdict": "可用",
+      "s": 0.61
+    },
+    {
+      "group": "base",
+      "url": "https://huayong.net/999/?v=",
+      "verdict": "超时/失败",
+      "s": 0
+    },
+    {
+      "group": "base",
+      "url": "https://huayong.net/jx5/?url=",
+      "verdict": "超时/失败",
+      "s": 0
+    },
+    {
+      "group": "base",
+      "url": "https://jx.wujinkk.com/dplayer/?url=",
+      "verdict": "可用",
+      "s": 2.19
+    },
+    {
+      "group": "base",
+      "url": "https://www.yemu.xyz/?url=",
+      "verdict": "可用",
+      "s": 0.31
+    },
+    {
+      "group": "base",
+      "url": "https://bd.jx.cn/?url=",
+      "verdict": "可用",
+      "s": 1.3
+    },
+    {
+      "group": "base",
+      "url": "https://jx.m3u8.tv/jiexi/?url=",
+      "verdict": "超时/失败",
+      "s": 0
+    },
+    {
+      "group": "base",
+      "url": "https://huayong.net/vip4/?url=",
+      "verdict": "超时/失败",
+      "s": 0
+    },
+    {
+      "group": "base",
+      "url": "https://yparse.ik9.cc/index.php?url=",
+      "verdict": "可用",
+      "s": 1.08
+    },
+    {
+      "group": "base",
+      "url": "https://jx.yparse.com/index.php?url=",
+      "verdict": "可用",
+      "s": 2.85
+    },
+    {
+      "group": "base",
+      "url": "https://yemu.xyz/?url=",
+      "verdict": "可用",
+      "s": 0.47
+    },
+    {
+      "group": "base",
+      "url": "Demo",
+      "verdict": "超时/失败",
+      "s": 0
+    },
+    {
+      "group": "base",
+      "url": "https://jx.xmflv.com/?url=",
+      "verdict": "无有效内容",
+      "s": 0.72
+    },
+    {
+      "group": "base",
+      "url": "https://jx.xyflv.cc/?url=",
+      "verdict": "可用",
+      "s": 2.41
+    },
+    {
+      "group": "base",
+      "url": "https://jx.aidouer.net/?url=",
+      "verdict": "可用",
+      "s": 2.83
+    },
+    {
+      "group": "base",
+      "url": "https://jx.m3u8.tv/jx/jx.php?url=",
+      "verdict": "超时/失败",
+      "s": 0
+    },
+    {
+      "group": "base",
+      "url": "https://ylu.cc/index.php?url=",
+      "verdict": "超时/失败",
+      "s": 0
+    },
+    {
+      "group": "base",
+      "url": "https://player.mrgaocloud.com/player/?url=",
+      "verdict": "超时/失败",
+      "s": 0
+    },
+    {
+      "group": "base",
+      "url": "http://api.wpsseo.cn/?v=",
+      "verdict": "超时/失败",
+      "s": 0
+    },
+    {
+      "group": "base",
+      "url": "https://www.8090.la/lander?url=",
+      "verdict": "超时/失败",
+      "s": 0
+    },
+    {
+      "group": "base",
+      "url": "https://jx.m3u8.pw/?url=",
+      "verdict": "超时/失败",
+      "s": 0
+    },
+    {
+      "group": "base",
+      "url": "http://pandown.pro/app/kkdy.php?url=",
+      "verdict": "超时/失败",
+      "s": 0
+    },
+    {
+      "group": "base",
+      "url": "https://api.tyun77.cn/api.php/provide/parseDicturl?url=",
+      "verdict": "无有效内容",
+      "s": 1.15
+    },
+    {
+      "group": "base",
+      "url": "https://jx.xymp4.cc/?url=",
+      "verdict": "无有效内容",
+      "s": 1.26
+    },
+    {
+      "group": "base",
+      "url": "https://mfjx.iwsyy.xyz/?url=",
+      "verdict": "超时/失败",
+      "s": 0
+    },
+    {
+      "group": "base",
+      "url": "https://zy.qiaoji8.com/xiafan.php?url=",
+      "verdict": "超时/失败",
+      "s": 0
+    },
+    {
+      "group": "base",
+      "url": "https://jx.77flv.cc/?url=",
+      "verdict": "可用",
+      "s": 1.69
+    }
+  ],
+  "new_ok_urls": [
+    "https://www.yemu.xyz/?url="
+  ]
+}
