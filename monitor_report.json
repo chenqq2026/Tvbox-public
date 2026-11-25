@@ -1,5 +1,5 @@
 {
-  "checked_at": "2026-11-24 13:26:50",
+  "checked_at": "2026-11-25 12:17:57",
   "scope": "产物完整性 + 通道固化（CI 不做测速/不切通道）",
   "targets": [
     {
@@ -35,7 +35,7 @@
       "file": "live_verified.m3u",
       "field": "lines",
       "ok": true,
-      "count": 506
+      "count": 507
     },
     {
       "name": "多仓壳 config",
