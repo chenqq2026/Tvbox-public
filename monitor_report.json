@@ -1,5 +1,5 @@
 {
-  "checked_at": "2026-11-25 12:17:57",
+  "checked_at": "2026-11-26 11:41:24",
   "scope": "产物完整性 + 通道固化（CI 不做测速/不切通道）",
   "targets": [
     {
@@ -7,7 +7,7 @@
       "file": "config_all.json",
       "field": "sites",
       "ok": true,
-      "count": 170
+      "count": 169
     },
     {
       "name": "精简 config_lite",
