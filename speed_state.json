@@ -1,6 +1,6 @@
 {
   "current": "ghfast",
-  "streak": 1,
+  "streak": 2,
   "candidate": "gh-proxy",
   "history": [
     {
@@ -56,6 +56,17 @@
         "ghfast": 12.874,
         "gh-proxy": 0.846,
         "raw": 16.171
+      }
+    },
+    {
+      "date": "2026-11-26 12:03:28",
+      "best": "gh-proxy",
+      "gain": 0.7887,
+      "decision": "观察中 → gh-proxy（第 2/3 天，暂不切）",
+      "scores": {
+        "ghfast": 4.094,
+        "gh-proxy": 0.865,
+        "raw": null
       }
     }
   ]
