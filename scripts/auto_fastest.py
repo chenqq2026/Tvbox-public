@@ -3,11 +3,15 @@
 
 设计红线（与 CI 侧 monitor_sources.py 分工）：
 - 本机（国内网络）测速才对电视盒有意义；CI 海外机房测国内加速通道会系统性误判。
-- 不做单次决策：新通道必须【连续 STREAK 天快 ≥ GAIN%】才切换，避免抖动导致
-  订阅地址反复变化、盒子缓存反复失效（这比慢 0.3s 更糟）。
+- **地址栏固定不变**：用户填进盒子的订阅入口（README 推荐地址 + config.json 的 urls）
+  永远指向 ghfast.top，绝不随测速改动——盒子缓存反复失效比慢 0.3s 更糟，
+  而且地址栏拉的是几十 KB 小文件，速度差异可忽略。真正的瓶颈是 1.7MB 的 jar。
+- 只切**配置内部 spider.jar 的通道**：改各 config 的 spider 字段 + CI 生成脚本的
+  SELF_PROXY + 监控脚本的校验常量，让盒子每次拉到的配置里 jar 都走当前最优通道。
+- 不做单次决策：新通道必须【连续 STREAK 天快 ≥ GAIN%】才切换，避免抖动。
 - 首次运行只建立基线，不切换。
 - 每次测速/决策全程留痕 speed_state.json + speed_report.json，可追溯可回滚。
-- 只切「通道前缀」，绝不改站点/解析器/直播内容；jar 的 md5 也不动。
+- 只切「jar 通道前缀」，绝不改站点/解析器/直播内容，也不改地址栏；jar 的 md5 不动。
 
 用法：
   python scripts/auto_fastest.py              # 测速+防抖判断，达标则切换+推送
@@ -117,46 +121,64 @@ def save_state(s):
               ensure_ascii=False, indent=2)
 
 
+# 地址栏固定前缀：用户填进盒子的订阅入口，永不随测速改变。
+# 只改配置内部 spider.jar 的通道，故替换时必须锚定到 "…/jar/" 这一段，
+# 绝不能用裸前缀全局替换——那会把 config.json 的 urls 和 README 的地址栏一起改掉。
+ADDRESS_PREFIX = CHANNELS["ghfast"]          # 仅供文档/断言，switch 不碰
+JAR_SUFFIX = "jar/"                          # spider.jar / spare_spider.jar 共同路径
+
+
+def _jar_prefix(ch):
+    """配置内 spider.jar 地址用的完整前缀（到 main/ 为止）。"""
+    return CHANNELS[ch]
+
+
 def switch_channel(new):
-    """把所有对外地址与生成脚本的通道前缀从 current 切到 new。"""
+    """只切配置内部 spider.jar 通道 + 生成/监控脚本，地址栏与站点一律不动。
+
+    旧实现用裸前缀 old 对全文 replace，有两个 bug：
+      1) config.json 的 urls、README 地址栏被一起改（违背"地址栏固定"承诺）；
+      2) 生成脚本里是短常量 SELF_PROXY="https://ghfast.top/"，与完整 old 匹配不上，
+         导致 CI 每天 05:17 重建又把 jar 写回旧通道，切换活不过一天。
+    这里分别用【锚定 jar 路径】和【正则匹配短常量】修正。
+    """
+    import re
     old = CHANNELS.get(STATE_CURRENT, CHANNELS["ghfast"])
     tgt = CHANNELS[new]
+    host = tgt.split("/")[2] if "://" in tgt else new
     changed = []
 
-    # 1) 生成脚本里的 SELF_PROXY（保证 CI 每日重建不再写回旧通道）
-    for fn in ["scripts/update_daily.py", "scripts/prune_sites.py"]:
+    # 1) 配置产物：只替换 spider.jar 地址的前缀（锚定 ".../jar/"），
+    #    config.json（纯地址栏 urls）不在此列，README 更不碰。
+    old_jar = old + JAR_SUFFIX
+    tgt_jar = tgt + JAR_SUFFIX
+    for fn in ["config_all.json", "config_lite.json", "spare_juhe.json",
+               "pruned_config.json"]:
         s = open(fn, encoding="utf-8").read()
-        if old in s:
-            open(fn, "w", encoding="utf-8", newline="\n").write(s.replace(old, tgt))
+        if old_jar in s:
+            open(fn, "w", encoding="utf-8", newline="\n").write(s.replace(old_jar, tgt_jar))
             changed.append(fn)
 
-    # 2) 监控脚本的 GHFAST 常量
+    # 2) 生成脚本里的 SELF_PROXY 短常量（CI 每日重建据此写 jar 地址）
+    #    正则精确匹配引号内域名前缀，不受 RAW 路径拼法影响。
+    short_prefix = "https://" + host + "/"
+    for fn in ["scripts/update_daily.py", "scripts/prune_sites.py"]:
+        s = open(fn, encoding="utf-8").read()
+        s2 = re.sub(r'(SELF_PROXY\s*=\s*")https://[^"]+(")',
+                    lambda m: m.group(1) + short_prefix + m.group(2), s, count=1)
+        if s2 != s:
+            open(fn, "w", encoding="utf-8", newline="\n").write(s2)
+            changed.append(fn)
+
+    # 3) 监控脚本的通道校验常量（CI 侧据此判断 jar 是否被写回旧通道）
     fn = "scripts/monitor_sources.py"
     s = open(fn, encoding="utf-8").read()
-    if "GHFAST = " in s:
-        import re
-        s2 = re.sub(r'GHFAST = "[^"]+"', f'GHFAST = "{new.split("-")[0] if new=="gh-proxy" else new}"', s, count=1)
-        # gh-proxy 的 host 判定要写完整域名
-        host = tgt.split("/")[2] if "://" in tgt else new
-        s2 = re.sub(r'GHFAST = "[^"]+"', f'GHFAST = "{host}"', s, count=1)
+    s2 = re.sub(r'GHFAST\s*=\s*"[^"]+"', f'GHFAST = "{host}"', s, count=1)
+    if s2 != s:
         open(fn, "w", encoding="utf-8", newline="\n").write(s2)
         changed.append(fn)
 
-    # 3) 配置产物的 spider / urls 前缀
-    for fn in ["config_all.json", "config_lite.json", "spare_juhe.json",
-               "pruned_config.json", "config.json"]:
-        s = open(fn, encoding="utf-8").read()
-        if old in s:
-            open(fn, "w", encoding="utf-8", newline="\n").write(s.replace(old, tgt))
-            changed.append(fn)
-
-    # 4) README 订阅地址前缀
-    fn = "README.md"
-    if os.path.exists(fn):
-        s = open(fn, encoding="utf-8").read()
-        if old in s:
-            open(fn, "w", encoding="utf-8", newline="\n").write(s.replace(old, tgt))
-            changed.append(fn)
+    # 4) 地址栏（README.md / config.json）刻意不动——固定 ghfast.top。
     return changed
 
 
@@ -237,7 +259,7 @@ def main():
     if do_switch:
         changed = switch_channel(best)
         print(f"  已切换文件: {changed}")
-        okp, msg = git_push(f"perf(channel): 国内实测连续{STREAK}天最优通道切至 {best}")
+        okp, msg = git_push(f"perf(jar): 国内实测连续{STREAK}天最优 jar 通道切至 {best}（地址栏固定不变）")
         print(f"  推送: {msg}")
         if okp:
             st["current"] = best

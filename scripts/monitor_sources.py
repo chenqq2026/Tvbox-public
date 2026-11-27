@@ -6,9 +6,12 @@
 
 1. 产物完整性：4 个对外订阅地址对应的本地文件是否存在、JSON 是否合法、
    关键字段是否齐全（sites / lives / urls）、数量是否跌破安全下限。
-2. 通道固化校验：配置里的 spider.jar 地址是否仍指向约定的 ghfast.top。
-   ghfast 是本机国内网络实测选定的最优通道（jar 1.8s vs gh-proxy 7.7s），
-   若被上游脚本改动或误写回 gh-proxy，这里会标记异常并写报告。
+2. 通道固化校验（两类分开，2026-11-27 重构）：
+   - 地址栏：config.json 的 urls 必须固定指向 ghfast.top（用户盒子填的入口，
+     永不随测速变；变了会导致盒子缓存失效）。
+   - jar 通道：各配置里的 spider.jar 地址必须指向当前最优通道 JAR_HOST
+     （由本机国内测速脚本 auto_fastest.py 写入，CI 只校验不决策）。
+   任一类被上游脚本误写，都标记异常并写报告。
 
 产物 monitor_report.json 供人查看，不参与自动提交（避免抖动）。
 异常不 fail 整个 workflow——只记录，是否处理由人决定。
@@ -18,7 +21,8 @@ import json
 import os
 import sys
 
-GHFAST = "ghfast.top"
+ADDRESS_HOST = "ghfast.top"   # 地址栏固定通道：永不改，用户盒子填的就是这个
+GHFAST = "gh-proxy.com"       # 当前 jar 通道：由 auto_fastest.py 测速后写入（变量名沿用）
 REPORT = "monitor_report.json"
 
 # 4 个对外订阅地址 -> 对应本地文件；size_floor 是内容跌破就判异常的下限
@@ -58,26 +62,40 @@ for label, fn, field, floor in TARGETS:
         problems.append(f"{label}: {row['reason']}")
     rows.append(row)
 
-# 通道固化校验：所有带 spider 的配置必须指向 ghfast
+# 通道固化校验：地址栏固定 ghfast.top，jar 通道走当前最优 GHFAST，两者分开判。
+def _check(urls, host):
+    return [u for u in urls if "raw.githubusercontent" in u and host not in u]
+
+
 chan_rows = []
+# (a) 地址栏：config.json 的 urls 是用户填进盒子的订阅入口，必须固定 ADDRESS_HOST
+fn = "config.json"
+if os.path.exists(fn):
+    try:
+        d = json.load(open(fn, encoding="utf-8"))
+        urls = [u["url"] for u in (d.get("urls") or [])
+                if isinstance(u, dict) and isinstance(u.get("url"), str)]
+        bad = _check(urls, ADDRESS_HOST)
+        chan_rows.append({"file": fn, "kind": "地址栏", "expect": ADDRESS_HOST,
+                          "urls": len(urls), "off_channel": len(bad)})
+        if bad:
+            problems.append(f"{fn}: {len(bad)} 个地址栏入口偏离固定通道 {ADDRESS_HOST}")
+    except Exception as e:
+        chan_rows.append({"file": fn, "error": type(e).__name__})
+
+# (b) jar 通道：各配置的 spider 字段必须指向当前最优 GHFAST
 for fn in ["config_all.json", "config_lite.json", "spare_juhe.json",
-           "pruned_config.json", "config.json"]:
+           "pruned_config.json"]:
     if not os.path.exists(fn):
         continue
     try:
         d = json.load(open(fn, encoding="utf-8"))
-        urls = []
-        if isinstance(d.get("spider"), str):
-            urls.append(d["spider"])
-        for u in (d.get("urls") or []):
-            if isinstance(u, dict) and isinstance(u.get("url"), str):
-                urls.append(u["url"])
-        bad = [u for u in urls if "raw.githubusercontent" in u and GHFAST not in u]
-        chan_rows.append({"file": fn, "urls": len(urls),
-                          "channel": "ghfast" if urls and not bad else ("mixed/other" if urls else "n/a"),
-                          "off_channel": len(bad)})
+        urls = [d["spider"]] if isinstance(d.get("spider"), str) else []
+        bad = _check(urls, GHFAST)
+        chan_rows.append({"file": fn, "kind": "jar", "expect": GHFAST,
+                          "urls": len(urls), "off_channel": len(bad)})
         if bad:
-            problems.append(f"{fn}: {len(bad)} 个地址未走 ghfast（可能被改回慢通道）")
+            problems.append(f"{fn}: {len(bad)} 个 jar 地址未走当前最优通道 {GHFAST}")
     except Exception as e:
         chan_rows.append({"file": fn, "error": type(e).__name__})
 

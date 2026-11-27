@@ -1,56 +1,56 @@
 {
-  "checked_at": "2026-11-26 12:03:28",
+  "checked_at": "2026-11-27 12:04:16",
   "scores": {
-    "ghfast": 4.094,
-    "gh-proxy": 0.865,
+    "ghfast": 4.321,
+    "gh-proxy": 1.075,
     "raw": null
   },
   "details": {
     "ghfast": {
       "jar/spider.jar": {
-        "median_s": 4.786,
+        "median_s": 5.102,
         "samples": [
-          7.62,
-          1.952
+          3.107,
+          7.097
         ],
         "weight": 0.8
       },
       "config_all.json": {
-        "median_s": 1.329,
+        "median_s": 1.2,
         "samples": [
-          1.247,
-          1.41
+          1.211,
+          1.189
         ],
         "weight": 0.2
       }
     },
     "gh-proxy": {
       "jar/spider.jar": {
-        "median_s": 0.949,
+        "median_s": 1.19,
         "samples": [
-          1.082,
-          0.816
+          1.568,
+          0.811
         ],
         "weight": 0.8
       },
       "config_all.json": {
-        "median_s": 0.53,
+        "median_s": 0.616,
         "samples": [
-          0.687,
-          0.372
+          0.853,
+          0.379
         ],
         "weight": 0.2
       }
     },
     "raw": {
-      "jar/spider.jar": "全部失败"
+      "config_all.json": "全部失败"
     }
   },
   "current": "ghfast",
   "best": "gh-proxy",
-  "gain": 0.7887,
-  "streak": 2,
+  "gain": 0.7512,
+  "streak": 3,
   "candidate": "gh-proxy",
-  "decision": "观察中 → gh-proxy（第 2/3 天，暂不切）",
+  "decision": "切换 → gh-proxy（连续 3 天快 75.1%）",
   "dry_run": false
 }

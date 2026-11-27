@@ -27,7 +27,7 @@ import urllib.request  # get() 依赖；缺失时 js 规则全部下载失败，
 GAO_PROXY = "https://gh-proxy.com/"
 # 本仓库自持 jar 写入配置时走 ghfast（实测比 gh-proxy 快约 10 倍）；
 # 下载上游 m3u 仍保留 GAO_PROXY 多镜像兜底。
-SELF_PROXY = "https://ghfast.top/"
+SELF_PROXY = "https://gh-proxy.com/"
 SKIP = ("githubusercontent", "gh-proxy", "jsdelivr", "github.com", "gitee.com",
         "ghproxy", "gitmirror", "127.0.0.1", "localhost", "servicewechat",
         "wyfc.qzz.io", "douban.com")

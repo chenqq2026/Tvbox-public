@@ -45,7 +45,7 @@ GAO_PROXY = "https://gh-proxy.com/"
 # 写进配置的本仓库自持 jar 走 ghfast：实测 1.7MB jar 经 gh-proxy 需 6~20 秒
 # （83~261KB/s），ghfast.top 仅 1.95 秒（871KB/s）。上游资源下载仍走 GAO_PROXY
 # 多镜像兜底，这里只改「TVBox 实际拉取 jar 的地址」，不影响上游可用性。
-SELF_PROXY = "https://ghfast.top/"
+SELF_PROXY = "https://gh-proxy.com/"
 RAW_QIST = "https://raw.githubusercontent.com/qist/tvbox/master/"
 GH_RAW_SELF = "https://raw.githubusercontent.com/chenqq2026/Tvbox-public/main/"
 JAR_MD5_RE = re.compile(r"md5;([0-9a-f]{32})")
