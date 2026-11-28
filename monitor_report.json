@@ -1,5 +1,5 @@
 {
-  "checked_at": "2026-11-27 11:47:55",
+  "checked_at": "2026-11-28 11:25:37",
   "scope": "产物完整性 + 通道固化（CI 不做测速/不切通道）",
   "targets": [
     {
@@ -35,7 +35,7 @@
       "file": "live_verified.m3u",
       "field": "lines",
       "ok": true,
-      "count": 506
+      "count": 507
     },
     {
       "name": "多仓壳 config",
@@ -47,33 +47,38 @@
   ],
   "channels": [
     {
+      "file": "config.json",
+      "kind": "地址栏",
+      "expect": "ghfast.top",
+      "urls": 3,
+      "off_channel": 0
+    },
+    {
       "file": "config_all.json",
+      "kind": "jar",
+      "expect": "gh-proxy.com",
       "urls": 1,
-      "channel": "ghfast",
       "off_channel": 0
     },
     {
       "file": "config_lite.json",
+      "kind": "jar",
+      "expect": "gh-proxy.com",
       "urls": 1,
-      "channel": "ghfast",
       "off_channel": 0
     },
     {
       "file": "spare_juhe.json",
+      "kind": "jar",
+      "expect": "gh-proxy.com",
       "urls": 1,
-      "channel": "ghfast",
       "off_channel": 0
     },
     {
       "file": "pruned_config.json",
+      "kind": "jar",
+      "expect": "gh-proxy.com",
       "urls": 1,
-      "channel": "ghfast",
-      "off_channel": 0
-    },
-    {
-      "file": "config.json",
-      "urls": 3,
-      "channel": "ghfast",
       "off_channel": 0
     }
   ],
